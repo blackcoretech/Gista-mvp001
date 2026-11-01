@@ -1,7 +1,7 @@
--- Keep the newest three eligible Posts in every refreshed Home feed.
--- The previous refresh wrapper randomly selected 12 from the top 50 ranked
--- Posts. That made a newly published Post appear on one refresh and disappear
--- on the next, even though the row remained saved in public.posts.
+-- Refresh the complete eligible Home pool in a new order; never sample a
+-- smaller random subset that makes eligible Posts disappear between refreshes.
+-- Discover refresh callers request the full 50-Post pool. Ordering is shuffled
+-- per refresh seed, while membership remains the same for that eligible pool.
 CREATE OR REPLACE FUNCTION public.get_fast_home_feed_refresh(
   p_tab text DEFAULT 'Discover'::text,
   p_limit integer DEFAULT 12,
@@ -17,30 +17,13 @@ RETURNS TABLE(
 LANGUAGE sql
 SET search_path TO 'public'
 AS $function$
-  WITH feed AS MATERIALIZED (
-    SELECT *
-    FROM public.get_fast_home_feed(p_tab, 50, 0)
-  ),
-  newest AS (
-    SELECT f.id
-    FROM feed f
-    ORDER BY f.created_at DESC, f.id DESC
-    LIMIT 3
-  )
   SELECT f.id, f.body, f.content_type, f.media_url, f.category, f.status,
          f.created_at, f.author_id, f.voice_duration_seconds, f.display_name,
          f.username, f.avatar_url, f.likes, f.responses, f.shares, f.saves,
          f.liked, f.saved
-  FROM feed f
-  LEFT JOIN newest n ON n.id = f.id
-  ORDER BY
-    (n.id IS NOT NULL) DESC,
-    CASE WHEN n.id IS NOT NULL THEN f.created_at END DESC,
-    CASE WHEN n.id IS NULL
-      THEN md5(f.id::text || ':' || COALESCE(p_refresh_seed, 0)::text)
-    END,
-    f.created_at DESC,
-    f.id DESC
+  FROM public.get_fast_home_feed(p_tab, 50, 0) AS f
+  ORDER BY md5(f.id::text || ':' || COALESCE(p_refresh_seed, 0)::text),
+           f.created_at DESC, f.id DESC
   LIMIT greatest(1, least(coalesce(p_limit, 12), 50))
   OFFSET greatest(coalesce(p_offset, 0), 0);
 $function$;
