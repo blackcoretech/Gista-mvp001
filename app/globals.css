@@ -737,3 +737,141 @@
   max-height: 112px;
   object-fit: cover;
 }
+
+
+/* Precise profile-only corrections: keep labels directly beneath their values,
+   and make the profile Post tiles a consistent two-column TikTok-style grid. */
+.profile-page .profile-hero .profile-stats.profile-stats-two {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: center !important;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item > strong,
+.profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item > span {
+  position: static !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+.profile-page .profile-post-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-flow: row;
+  align-items: start !important;
+  gap: 9px !important;
+}
+.profile-page .profile-post-grid > .profile-gist {
+  display: flex;
+  flex-direction: column;
+  align-self: start !important;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 8px !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.profile-page .profile-post-grid .post-head {
+  min-width: 0;
+  gap: 6px;
+}
+.profile-page .profile-post-grid .post-head .identity {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.profile-page .profile-post-grid .post-head .identity span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-page .profile-post-grid .profile-gist-content {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.profile-page .profile-post-grid .profile-gist-content > p,
+.profile-page .profile-post-grid .profile-gist-content > .post-text {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden !important;
+  max-width: 100%;
+  margin: 5px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  font-size: 12px;
+}
+.profile-page .profile-post-grid .profile-gist-content > img {
+  display: block;
+  width: 100% !important;
+  height: 118px !important;
+  max-height: 118px !important;
+  margin: 0 !important;
+  object-fit: cover !important;
+  border-radius: 9px;
+}
+.profile-page .profile-post-grid .profile-gist-voice,
+.profile-page .profile-post-grid .voice-player,
+.profile-page .profile-post-grid .voice-note {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.profile-page .profile-post-grid .gist-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin-top: 7px;
+  font-size: 10px;
+}
+.profile-page .profile-post-grid .profile-gist-actions,
+.profile-page .profile-post-grid .actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  margin-top: auto;
+  padding-top: 7px;
+}
+.profile-page .profile-post-grid .profile-gist-actions button,
+.profile-page .profile-post-grid .profile-gist-actions a,
+.profile-page .profile-post-grid .actions button,
+.profile-page .profile-post-grid .actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  font-size: 10px;
+}
+@media (max-width: 560px) {
+  .profile-page .profile-post-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .profile-page .profile-post-grid .profile-gist-content > img { height: 118px !important; max-height: 118px !important; }
+}
