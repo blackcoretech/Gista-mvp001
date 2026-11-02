@@ -961,3 +961,52 @@
   top: 64px !important;
   z-index: 39 !important;
 }
+
+
+/* Navigation correction: keep each page's top bar fixed to the viewport.
+   The page roots reserve the same 64px so content never slides underneath it. */
+.app-shell,
+.profile-page,
+main.content {
+  padding-top: 64px !important;
+}
+.topbar,
+.profile-header,
+.settings-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(100%, 680px) !important;
+  height: 64px !important;
+  transform: translateX(-50%) !important;
+  z-index: 1000 !important;
+  background: #fff !important;
+  box-shadow: 0 1px 0 #eeeaf4 !important;
+}
+.feed-tabs {
+  position: sticky !important;
+  top: 64px !important;
+  z-index: 900 !important;
+  background: #fff !important;
+}
+
+/* Profile media should use the available feed width and its own natural
+   aspect ratio; don't letterbox it inside a short fixed-height image box. */
+.profile-page .profile-post-grid .profile-gist-content > img,
+.profile-page .profile-saved-gist .profile-gist-content > img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: initial !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.profile-page .profile-post-grid > .profile-gist {
+  padding: 14px 16px !important;
+}
+.profile-page .profile-post-grid .profile-gist-content > p {
+  margin: 8px 0 12px !important;
+}
