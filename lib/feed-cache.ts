@@ -2,7 +2,8 @@
 // Every entry is keyed by the signed-in user's id, so one account can never read
 // another account's cached feed (which includes that account's liked/saved flags
 // and any private-account posts it was allowed to see).
-export const FEED_CACHE_PREFIX = "gista:feed:";
+export const FEED_CACHE_PREFIX = "gista:feed:v2:";
+const LEGACY_FEED_CACHE_PREFIX = "gista:feed:";
 // Preserve the selected post list/order for the active browser session. The cache
 // is intentionally not cleared on pagehide because Safari can fire pagehide during
 // navigation/BFCache transitions. A hard reload is handled by HomePage's reload
@@ -68,7 +69,7 @@ export function clearFeedCache(storage: FeedCacheStorage | null, keepUserId?: st
     const doomed: string[] = [];
     for (let i = 0; i < storage.length; i += 1) {
       const key = storage.key(i);
-      if (key && key.startsWith(FEED_CACHE_PREFIX) && !(keepPrefix && key.startsWith(keepPrefix))) doomed.push(key);
+      if (key && (key.startsWith(FEED_CACHE_PREFIX) || key.startsWith(LEGACY_FEED_CACHE_PREFIX)) && !(keepPrefix && key.startsWith(keepPrefix))) doomed.push(key);
     }
     doomed.forEach((key) => storage.removeItem(key));
   } catch {
