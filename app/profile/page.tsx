@@ -73,8 +73,8 @@ export default function ProfilePage() {
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
     setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
-    const rawStats = statsResult.data?.[0] as { gists?: number; followers?: number; following?: number } | undefined;
-    setStats({ posts: postsResult.count ?? Number(rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
+    const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
+    setStats({ posts: postsResult.count ?? Number(rawStats?.posts ?? rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
