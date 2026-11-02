@@ -58,21 +58,21 @@ export default function PublicProfile() {
     const [followState, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
       user ? supabase.from("follows").select("follower_id").eq("follower_id", user.id).eq("following_id", data.id).maybeSingle() : Promise.resolve({ data: null }),
       supabase.rpc("get_profile_stats", { target_profile_id: data.id }),
-      supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", data.id).order("created_at", { ascending: false }).limit(30),
+      supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", data.id),
     ]);
     let postsResult = initialPostsResult;
     // Avoid declaring a profile empty on a transient first response after navigation.
     if ((postsResult.data ?? []).length === 0 && !postsResult.error) {
       await new Promise((resolve) => window.setTimeout(resolve, 300));
-      const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
+      const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
     const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
     setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
-    setCounts({ posts: Number(profileStats?.posts ?? profileStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
+    setCounts({ posts: postsResult.count ?? Number(profileStats?.posts ?? profileStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
     if (data.is_private && user?.id !== data.id && !isFollowing) { setPosts([]); setPrivateMessage("This account is private. Follow this account to see its Posts."); setLoading(false); return; }
     const ownPosts = (postsResult.data ?? []) as Array<Omit<PublicPost, "likes" | "responses" | "saves" | "shares" | "liked" | "saved">>;
     const postIds = ownPosts.map((post) => post.id);
@@ -213,7 +213,7 @@ export default function PublicProfile() {
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         <div className="profile-stats">
-          <div><strong>{counts.likes}</strong><span>Total Likes</span></div>
+          <div><strong>{counts.posts}</strong><span>Total Posts</span></div>
           <Link href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
           <Link href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
         </div>
