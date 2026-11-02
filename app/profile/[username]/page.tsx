@@ -212,10 +212,9 @@ export default function PublicProfile() {
         </h1>
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-        <div className="profile-stats">
-          <div><strong>{counts.posts}</strong><span>Total Posts</span></div>
+        <div className="profile-stats profile-stats-two">
           <Link href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
-          <Link href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
+          <div><strong>{counts.posts}</strong><span>Posts</span></div>
         </div>
         {me?.id !== profile.id && <div className="profile-actions"><button className="profile-primary" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button></div>}
       </section>
