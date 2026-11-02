@@ -11,6 +11,7 @@ import BottomNav from "@/components/BottomNav";
 import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
 type Profile = { id: string; username: string | null; display_name: string | null; bio: string | null; avatar_url: string | null; cover_url: string | null };
+type MyReply = { id: string; body: string | null; content_type: string; created_at: string; post_id: string; posts: { id: string; body: string | null; created_at: string } | null };
 type Post = { id: string; content_type: string; body: string | null; media_url: string | null; category: string; status: string | null; created_at: string; voice_duration_seconds: number | null; likes: number; comments: number; saves: number; shares: number; liked: boolean; saved: boolean };
 const PROFILE_SELECT = "id,username,display_name,bio,avatar_url,cover_url";
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
@@ -27,6 +28,8 @@ export default function ProfilePage() {
   const [bio, setBio] = useState("");
   const [stats, setStats] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
+  const [replies, setReplies] = useState<MyReply[]>([]);
+  const [activeTab, setActiveTab] = useState<"posts" | "replies">("posts");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -43,11 +46,12 @@ export default function ProfilePage() {
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
-    const [profileResult, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
+    const [profileResult, statsResult, initialPostsResult, totalLikesResult, repliesResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
       supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", user.id),
+      supabase.from("responses").select("id,body,content_type,created_at,post_id,posts!inner(id,body,created_at)").eq("author_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
     let postsResult = initialPostsResult;
     // Profile queries can race the first authenticated request after navigation.
@@ -64,6 +68,7 @@ export default function ProfilePage() {
     }
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
+    setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
     const rawStats = statsResult.data?.[0] as { gists?: number; followers?: number; following?: number } | undefined;
     setStats({ posts: Number(rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
@@ -166,18 +171,18 @@ export default function ProfilePage() {
         <h1>{profile?.display_name || displayName || "Gista User"}</h1>
         {profileUsername && <p className="profile-username">@{profileUsername}</p>}
         {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-        <div className="profile-stats"><div><strong>{stats.likes}</strong><span>Total Likes</span></div><Link href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
-        <div className="profile-actions"><button className="profile-primary" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button><Link className="profile-secondary" href="/saved">Saved Posts</Link></div>
+        <div className="profile-stats"><Link href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><div><strong>{stats.posts}</strong><span>Total Posts</span></div></div>
+        <div className="profile-actions"><button className="profile-primary" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
       {edit&&<section className="profile-editor"><div className="editor-heading"><div><h2>Edit profile</h2><p>Update your name, username and bio.</p></div><UserRound size={22}/></div><label>Display name<input value={displayName} maxLength={60} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your display name" /></label><label>Username<div className="username-input"><span>@</span><input value={username} maxLength={30} onChange={(e)=>setUsername(e.target.value.replace(/\s/g,""))} placeholder="username" /></div></label><label>Bio<textarea value={bio} maxLength={160} onChange={(e)=>setBio(e.target.value)} placeholder="Tell people about yourself…" /><small>{bio.length}/160</small></label><button className="profile-save" type="button" onClick={()=>void saveProfile()} disabled={saving}><Check size={17}/> {saving?"Saving…":"Save changes"}</button></section>}
-      <section className="profile-content" id="my-posts"><div className="section-title"><h2>Posts</h2><span>{stats.posts}</span></div>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
+      <section className="profile-content" id="my-posts"><nav className="profile-tabs" aria-label="Profile sections"><button type="button" className={activeTab==="posts"?"active":""} onClick={()=>setActiveTab("posts")}>Posts</button><button type="button" className={activeTab==="replies"?"active":""} onClick={()=>setActiveTab("replies")}>Replies</button><Link href="/saved">Saved Posts</Link></nav>{activeTab==="replies"?<div className="profile-replies">{replies.length===0?<div className="profile-empty"><h3>No Replies yet</h3><p>Your replies to other people’s Posts will appear here.</p></div>:replies.map((reply)=><article className="profile-reply" key={reply.id}><span className="profile-reply-label">You replied to a Post</span>{reply.body&&<p>{reply.body}</p>}<Link href={"/post/"+reply.post_id}>View original Post{reply.posts?.body?": "+reply.posts.body.slice(0,100):""}</Link><small>{new Date(reply.created_at).toLocaleString()}</small></article>)}</div>:<>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
         <div className="post-head"><div className="avatar" style={{overflow:"hidden"}}>{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:initials}</div><div className="identity"><strong>{profile?.display_name||displayName||"Gista User"}</strong><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
         <Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Post" loading="lazy"/>}</Link>
         {post.content_type==="voice"&&post.media_url&&<div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds}/></div>}
         <div className="gist-status"><span className="dot">●</span>{post.status?post.status.charAt(0).toUpperCase()+post.status.slice(1):"Growing"}<Link href={"/post/"+post.id+"?dna=1"}>Post DNA</Link></div>
         <div className="actions profile-gist-actions"><button type="button" className={post.liked?"liked":""} onClick={()=>void toggleLike(post)} disabled={busy===post.id+"l"} aria-label="Like Post"><Heart size={18} fill={post.liked?"currentColor":"none"}/> {post.likes}</button><Link className="feed-action-link" href={"/post/"+post.id+"?comments=1"} aria-label="Comments"><MessageCircle size={18}/> {post.comments}</Link><button type="button" onClick={()=>void sharePost(post)} aria-label="Share Post"><Share2 size={18}/> {post.shares}</button><button type="button" className={post.saved?"saved-action":""} onClick={()=>void toggleSave(post)} disabled={busy===post.id+"s"} aria-label={post.saved?"Unsave Post":"Save Post"}><Bookmark size={18} fill={post.saved?"currentColor":"none"}/> {post.saves}</button></div>
-      </article>)}</div>}</section>
+      </article>)}</div>}</>}</section>
       <button className="profile-logout" type="button" onClick={()=>void signOut()}>Log out</button>
     </section>
     <BottomNav active="profile"/>
