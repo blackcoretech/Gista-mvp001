@@ -566,3 +566,27 @@
  .profile-post-grid .profile-gist-content>img{height:122px;max-height:122px}
  .profile-post-grid .profile-gist-actions button,.profile-post-grid .profile-gist-actions a{font-size:10px}
 }
+
+
+/* Profile readability fixes: show the complete Post copy and keep the active tab
+   highlight inside its own control rather than over the Post content. */
+.profile-page .profile-content { overflow: visible; }
+.profile-page .profile-tabs { position: relative; z-index: 0; isolation: isolate; }
+.profile-page .profile-tabs button,
+.profile-page .profile-tabs a { position: relative; z-index: 0; }
+.profile-page .profile-tabs button.active { z-index: 0; }
+.profile-page .profile-post-grid .profile-gist-content > p {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: initial;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+@media (max-width: 560px) {
+  .profile-page .profile-post-grid { grid-template-columns: minmax(0, 1fr); }
+  .profile-page .profile-post-grid .profile-gist { width: 100%; min-width: 0; }
+  .profile-page .profile-post-grid .profile-gist-content > p { font-size: 14px; line-height: 1.5; }
+  .profile-page .profile-post-grid .profile-gist-content > img { height: auto; max-height: 420px; object-fit: contain; }
+}
