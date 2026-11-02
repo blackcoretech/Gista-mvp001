@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/lib/auth";
 import VoicePlayer from "@/components/voice-player";
+import VoiceNote from "@/components/VoiceNote";
 import BottomNav from "@/components/BottomNav";
 import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
