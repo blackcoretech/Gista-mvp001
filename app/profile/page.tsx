@@ -74,7 +74,11 @@ export default function ProfilePage() {
     if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
     setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
-    setStats({ posts: postsResult.count ?? Number(rawStats?.posts ?? rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
+    const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
+    // Prefer the direct exact count, but do not let an RLS-filtered zero hide a
+    // valid aggregate count returned by the profile stats RPC.
+    const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
+    setStats({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
