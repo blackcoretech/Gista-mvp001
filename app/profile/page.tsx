@@ -30,7 +30,10 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
   const [replies, setReplies] = useState<MyReply[]>([]);
-  const [activeTab, setActiveTab] = useState<"posts" | "replies">("posts");
+  const [savedPosts, setSavedPosts] = useState<SavedProfilePost[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [savedLoaded, setSavedLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "saved">("posts");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
