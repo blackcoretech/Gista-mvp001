@@ -590,3 +590,38 @@
   .profile-page .profile-post-grid .profile-gist-content > p { font-size: 14px; line-height: 1.5; }
   .profile-page .profile-post-grid .profile-gist-content > img { height: auto; max-height: 420px; object-fit: contain; }
 }
+
+
+/* Profile tabs stay visually separate from the Posts below them. */
+.profile-page .profile-hero .profile-stats.profile-stats-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 340px;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-two > a,
+.profile-page .profile-hero .profile-stats.profile-stats-two > div { border-right: 1px solid #ded5ee; }
+.profile-page .profile-hero .profile-stats.profile-stats-two > :last-child { border-right: 0; }
+.profile-page .profile-tabs {
+  position: relative; display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 6px; padding: 6px; margin: 0 0 16px; border: 1px solid #e6def2;
+  border-radius: 16px; background: #fff; isolation: auto; overflow: visible;
+}
+.profile-page .profile-tabs button {
+  position: static; min-width: 0; min-height: 46px; padding: 9px 5px; border: 0;
+  border-radius: 11px; background: #f2eef9; color: #34234f; font-size: 14px;
+  font-weight: 750; line-height: 1.2; text-align: center; white-space: normal; cursor: pointer;
+}
+.profile-page .profile-tabs button.active { background: #5b21b6; color: #fff; box-shadow: none; }
+.profile-page .profile-saved-posts { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+.profile-page .profile-saved-gist { min-width: 0; padding: 14px; border: 1px solid #eee8f7; border-radius: 16px; background: #fff; }
+.profile-page .profile-saved-gist .profile-gist-content > p {
+  display: block; margin: 10px 0; overflow: visible; white-space: pre-wrap;
+  overflow-wrap: anywhere; line-height: 1.5;
+}
+.profile-page .profile-saved-gist .profile-gist-content > img {
+  display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: 12px;
+}
+.profile-page .profile-saved-open { display: inline-flex; margin-top: 10px; color: #5b21b6; font-size: 13px; font-weight: 750; text-decoration: none; }
+@media (max-width: 480px) {
+  .profile-page .profile-tabs { gap: 4px; padding: 5px; }
+  .profile-page .profile-tabs button { min-height: 44px; padding: 8px 3px; font-size: 12px; }
+}
