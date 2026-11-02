@@ -625,3 +625,52 @@
   .profile-page .profile-tabs { gap: 4px; padding: 5px; }
   .profile-page .profile-tabs button { min-height: 44px; padding: 8px 3px; font-size: 12px; }
 }
+
+
+/* Restore the approved compact, shorter profile Post cards. */
+.profile-page .profile-post-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.profile-page .profile-post-grid .profile-gist {
+  min-width: 0;
+  align-self: start;
+  padding: 9px;
+  border: 1px solid #eee8f7;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(35,16,70,.035);
+}
+.profile-page .profile-post-grid .profile-gist-content > p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  font-size: 12px;
+}
+.profile-page .profile-post-grid .profile-gist-content > img {
+  width: 100%;
+  height: 112px;
+  max-height: 112px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.profile-page .profile-post-grid .profile-gist-actions {
+  gap: 5px;
+  margin-top: 7px;
+  padding-top: 7px;
+}
+.profile-page .profile-post-grid .profile-gist-actions button,
+.profile-page .profile-post-grid .profile-gist-actions a {
+  font-size: 10px;
+  gap: 3px;
+}
+@media (max-width: 380px) {
+  .profile-page .profile-post-grid { gap: 7px; }
+  .profile-page .profile-post-grid .profile-gist { padding: 7px; }
+  .profile-page .profile-post-grid .profile-gist-content > p { font-size: 11px; }
+}
