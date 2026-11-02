@@ -56,7 +56,6 @@ function addBadge(target: Element, color: string) {
 export default function VerifiedBadgeInjector() {
   useEffect(() => {
     let cancelled = false;
-    let observer: MutationObserver | undefined;
     let verifiedAccounts: VerifiedAccount[] = [];
     let loadVersion = 0;
     const supabase = createClient();
@@ -112,13 +111,13 @@ export default function VerifiedBadgeInjector() {
       }
     });
 
-    observer = new MutationObserver(apply);
+    const observer = new MutationObserver(apply);
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       cancelled = true;
       loadVersion += 1;
-      observer?.disconnect();
+      observer.disconnect();
       authListener.subscription.unsubscribe();
     };
   }, []);
