@@ -2,7 +2,7 @@
 // Every entry is keyed by the signed-in user's id, so one account can never read
 // another account's cached feed (which includes that account's liked/saved flags
 // and any private-account posts it was allowed to see).
-export const FEED_CACHE_PREFIX = "gista:feed:";
+export const FEED_CACHE_PREFIX = "gista:feed:v2:";
 // Preserve the selected post list/order for the active browser session. The cache
 // is intentionally not cleared on pagehide because Safari can fire pagehide during
 // navigation/BFCache transitions. A hard reload is handled by HomePage's reload
