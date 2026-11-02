@@ -72,7 +72,11 @@ export default function PublicProfile() {
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
     setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
-    setCounts({ posts: postsResult.count ?? Number(profileStats?.posts ?? profileStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
+    const rpcPostCount = Number(profileStats?.posts ?? profileStats?.gists ?? 0);
+    // Use the strongest available count so an RLS-filtered zero from the posts
+    // list cannot mask the aggregate count for a public profile.
+    const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
+    setCounts({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
     if (data.is_private && user?.id !== data.id && !isFollowing) { setPosts([]); setPrivateMessage("This account is private. Follow this account to see its Posts."); setLoading(false); return; }
     const ownPosts = (postsResult.data ?? []) as Array<Omit<PublicPost, "likes" | "responses" | "saves" | "shares" | "liked" | "saved">>;
     const postIds = ownPosts.map((post) => post.id);
