@@ -49,7 +49,7 @@ export default function ProfilePage() {
     const [profileResult, statsResult, initialPostsResult, totalLikesResult, repliesResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
-      supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
+      supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", user.id),
       supabase.from("responses").select("id,body,content_type,created_at,post_id,posts!inner(id,body,created_at)").eq("author_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
@@ -58,7 +58,7 @@ export default function ProfilePage() {
     // Retry a transient empty result before treating it as a genuinely empty profile.
     if ((postsResult.data ?? []).length === 0 && !postsResult.error) {
       await new Promise((resolve) => window.setTimeout(resolve, 300));
-      const retry = await supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", user.id).order("created_at", { ascending: false }).limit(30);
+      const retry = await supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
     let data = profileResult.data as Profile | null;
@@ -70,7 +70,7 @@ export default function ProfilePage() {
     if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
     setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
     const rawStats = statsResult.data?.[0] as { gists?: number; followers?: number; following?: number } | undefined;
-    setStats({ posts: Number(rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
+    setStats({ posts: postsResult.count ?? Number(rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
