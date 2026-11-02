@@ -217,14 +217,14 @@ export default function PublicProfile() {
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         <div className="profile-stats profile-stats-two">
-          <Link href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
-          <div><strong>{counts.posts}</strong><span>Posts</span></div>
+          <Link className="profile-stat-item" href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
+          <div className="profile-stat-item"><strong>{counts.posts}</strong><span>Posts</span></div>
         </div>
         {me?.id !== profile.id && <div className="profile-actions"><button className="profile-primary" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button></div>}
       </section>
       <section className="profile-content" id="posts">
         <div className="section-title"><h2>Posts</h2><span>{counts.posts}</span></div>
-        {privateMessage ? <div className="profile-empty"><h3>Private account</h3><p>{privateMessage}</p></div> : posts.length === 0 ? <div className="profile-empty"><h3>No Posts yet</h3><p>This user hasn’t shared any Posts yet.</p></div> : <div className="profile-gists">
+        {privateMessage ? <div className="profile-empty"><h3>Private account</h3><p>{privateMessage}</p></div> : posts.length === 0 ? <div className="profile-empty"><h3>No Posts yet</h3><p>This user hasn’t shared any Posts yet.</p></div> : <div className="profile-gists profile-post-grid">
           {posts.map((post) => <article className="profile-gist" key={post.id}>
             <div className="post-head">
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
