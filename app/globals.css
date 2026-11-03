@@ -991,18 +991,29 @@ main.content {
   background: #fff !important;
 }
 
-/* Profile media should use the available feed width and its own natural
-   aspect ratio; don't letterbox it inside a short fixed-height image box. */
-.profile-page .profile-post-grid .profile-gist-content > img,
-.profile-page .profile-saved-gist .profile-gist-content > img {
-  display: block !important;
+/* Use one responsive photo treatment on Home and Profile:
+   full available card width, natural proportions, no square crop. */
+.gist-media {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 16px;
+  background: #f4f4f5;
+  margin-top: 10px;
+}
+.profile-page .profile-post-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.profile-page .profile-post-grid .profile-gist-content > img.gist-media,
+.profile-page .profile-saved-gist .profile-gist-content > img.gist-media {
   width: 100% !important;
   height: auto !important;
-  max-height: none !important;
-  aspect-ratio: auto !important;
-  object-fit: initial !important;
-  background: transparent !important;
-  border-radius: 0 !important;
+  max-height: 620px !important;
+  object-fit: contain !important;
 }
 .profile-page .profile-post-grid > .profile-gist {
   padding: 14px 16px !important;
