@@ -142,3 +142,50 @@
   object-position: center;
   border-radius: 50%;
 }
+
+
+/* Profile refresh: keep the existing cover image frame intact while placing the avatar to the left. */
+.profile-hero.profile-hero-with-cover { text-align:left; }
+.profile-hero-with-cover .profile-photo-wrap { margin:-48px 0 12px; justify-content:flex-start; }
+.profile-hero-with-cover > h1,.profile-hero-with-cover > .profile-username,.profile-hero-with-cover > .profile-bio { text-align:left; }
+.profile-page .profile-hero .profile-stats { max-width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); justify-items:start; margin:16px 0; }
+.profile-page .profile-hero .profile-stats > div,.profile-page .profile-hero .profile-stats > a { align-items:flex-start; text-align:left; }
+.profile-page .profile-hero .profile-stats strong,.profile-page .profile-hero .profile-stats span { text-align:left; }
+.profile-page .profile-actions { justify-content:flex-start; }
+.profile-tabs { display:flex; align-items:center; gap:0; border-bottom:1px solid #e9e5f0; margin:0 0 14px; }
+.profile-tabs button,.profile-tabs a { flex:1; border:0; background:transparent; color:#77727f; padding:14px 8px; text-align:center; text-decoration:none; font:inherit; font-size:14px; font-weight:700; cursor:pointer; border-bottom:2px solid transparent; }
+.profile-tabs button.active { color:#6d28d9; border-bottom-color:#7c3aed; }
+.profile-replies { display:grid; gap:10px; }
+.profile-reply { padding:16px; border:1px solid #eeeaf4; border-radius:15px; background:var(--card,#fff); }
+.profile-reply-label { color:#7c3aed; font-size:12px; font-weight:750; }
+.profile-reply p { margin:8px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.profile-reply a { color:#6d28d9; font-size:13px; text-decoration:none; }
+.profile-reply small { display:block; color:#96919d; margin-top:8px; }
+
+
+/* Compact profile card refinement */
+.profile-wrap { padding-top: 10px; }
+.profile-hero.profile-hero-with-cover { padding: 0 18px 16px; border-radius: 18px; }
+.profile-hero-with-cover .profile-cover { height: 142px; border-radius: 17px 17px 0 0; }
+.profile-hero-with-cover .profile-photo-wrap { width: 88px; height: 88px; margin: -38px 0 8px; }
+.profile-hero-with-cover .profile-photo-wrap .profile-photo { width: 84px; height: 84px; min-width: 84px; min-height: 84px; flex-basis: 84px; border-width: 3px; }
+.profile-hero-with-cover > h1 { font-size: 21px; margin: 2px 0; }
+.profile-hero-with-cover > .profile-username { font-size: 13px; }
+.profile-hero-with-cover > .profile-bio { margin: 7px 0 0; max-width: 100%; font-size: 13px; line-height: 1.4; }
+.profile-page .profile-hero .profile-stats { display: flex; justify-content: flex-start; gap: 26px; margin: 12px 0; }
+.profile-page .profile-hero .profile-stats > div,.profile-page .profile-hero .profile-stats > a { flex: 0 0 auto; gap: 1px; }
+.profile-page .profile-hero .profile-stats strong { font-size: 17px; }
+.profile-page .profile-hero .profile-stats span { font-size: 11px; }
+.profile-page .profile-actions { margin-top: 8px; }
+.profile-page .profile-primary { min-height: 36px; padding: 8px 15px; border-radius: 10px; font-size: 13px; }
+.profile-content { margin-top: 10px; padding: 6px 12px 12px; border-radius: 17px; }
+.profile-tabs { margin: 0 0 10px; }
+.profile-tabs button,.profile-tabs a { padding: 11px 5px 10px; font-size: 13px; }
+.profile-reply { padding: 12px; border-radius: 12px; }
+@media (max-width: 480px) {
+ .profile-wrap { padding: 8px 9px 28px; }
+ .profile-hero.profile-hero-with-cover { padding: 0 14px 14px; }
+ .profile-hero-with-cover .profile-cover { height: 128px; }
+ .profile-hero-with-cover .profile-photo-wrap { margin-top: -36px; }
+ .profile-content { padding-left: 10px; padding-right: 10px; }
+}

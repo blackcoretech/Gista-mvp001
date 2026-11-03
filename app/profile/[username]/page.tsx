@@ -58,21 +58,25 @@ export default function PublicProfile() {
     const [followState, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
       user ? supabase.from("follows").select("follower_id").eq("follower_id", user.id).eq("following_id", data.id).maybeSingle() : Promise.resolve({ data: null }),
       supabase.rpc("get_profile_stats", { target_profile_id: data.id }),
-      supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", data.id).order("created_at", { ascending: false }).limit(30),
+      supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", data.id),
     ]);
     let postsResult = initialPostsResult;
     // Avoid declaring a profile empty on a transient first response after navigation.
     if ((postsResult.data ?? []).length === 0 && !postsResult.error) {
       await new Promise((resolve) => window.setTimeout(resolve, 300));
-      const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
+      const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
     const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
     setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
-    setCounts({ posts: Number(profileStats?.posts ?? profileStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
+    const rpcPostCount = Number(profileStats?.posts ?? profileStats?.gists ?? 0);
+    // Use the strongest available count so an RLS-filtered zero from the posts
+    // list cannot mask the aggregate count for a public profile.
+    const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
+    setCounts({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
     if (data.is_private && user?.id !== data.id && !isFollowing) { setPosts([]); setPrivateMessage("This account is private. Follow this account to see its Posts."); setLoading(false); return; }
     const ownPosts = (postsResult.data ?? []) as Array<Omit<PublicPost, "likes" | "responses" | "saves" | "shares" | "liked" | "saved">>;
     const postIds = ownPosts.map((post) => post.id);
@@ -212,16 +216,15 @@ export default function PublicProfile() {
         </h1>
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-        <div className="profile-stats">
-          <div><strong>{counts.likes}</strong><span>Total Likes</span></div>
-          <Link href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
-          <Link href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
+        <div className="profile-stats profile-stats-two">
+          <Link className="profile-stat-item" href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
+          <div className="profile-stat-item"><strong>{counts.posts}</strong><span>Posts</span></div>
         </div>
         {me?.id !== profile.id && <div className="profile-actions"><button className="profile-primary" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button></div>}
       </section>
       <section className="profile-content" id="posts">
         <div className="section-title"><h2>Posts</h2><span>{counts.posts}</span></div>
-        {privateMessage ? <div className="profile-empty"><h3>Private account</h3><p>{privateMessage}</p></div> : posts.length === 0 ? <div className="profile-empty"><h3>No Posts yet</h3><p>This user hasn’t shared any Posts yet.</p></div> : <div className="profile-gists">
+        {privateMessage ? <div className="profile-empty"><h3>Private account</h3><p>{privateMessage}</p></div> : posts.length === 0 ? <div className="profile-empty"><h3>No Posts yet</h3><p>This user hasn’t shared any Posts yet.</p></div> : <div className="profile-gists profile-post-grid">
           {posts.map((post) => <article className="profile-gist" key={post.id}>
             <div className="post-head">
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">

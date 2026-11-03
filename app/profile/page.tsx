@@ -6,12 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/lib/auth";
+import VoicePlayer from "@/components/voice-player";
 import VoiceNote from "@/components/VoiceNote";
 import BottomNav from "@/components/BottomNav";
 import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
 type Profile = { id: string; username: string | null; display_name: string | null; bio: string | null; avatar_url: string | null; cover_url: string | null };
+type MyReply = { id: string; body: string | null; content_type: string; created_at: string; post_id: string; posts: { id: string; body: string | null; created_at: string } | null };
 type Post = { id: string; content_type: string; body: string | null; media_url: string | null; category: string; status: string | null; created_at: string; voice_duration_seconds: number | null; likes: number; comments: number; saves: number; shares: number; liked: boolean; saved: boolean };
+type SavedProfilePost = { id: string; body: string | null; content_type: string; media_url: string | null; category: string; created_at: string; voice_duration_seconds: number | null };
 const PROFILE_SELECT = "id,username,display_name,bio,avatar_url,cover_url";
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
 function readCachedProfile(userId:string):Profile|null{try{const raw=window.localStorage.getItem(PROFILE_CACHE_PREFIX+userId);return raw?JSON.parse(raw) as Profile:null}catch{return null}}
@@ -27,6 +30,11 @@ export default function ProfilePage() {
   const [bio, setBio] = useState("");
   const [stats, setStats] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
+  const [replies, setReplies] = useState<MyReply[]>([]);
+  const [savedPosts, setSavedPosts] = useState<SavedProfilePost[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [savedLoaded, setSavedLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "saved">("posts");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -43,18 +51,19 @@ export default function ProfilePage() {
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
-    const [profileResult, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
+    const [profileResult, statsResult, initialPostsResult, totalLikesResult, repliesResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
-      supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
+      supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", user.id),
+      supabase.from("responses").select("id,body,content_type,created_at,post_id,posts!inner(id,body,created_at)").eq("author_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
     let postsResult = initialPostsResult;
     // Profile queries can race the first authenticated request after navigation.
     // Retry a transient empty result before treating it as a genuinely empty profile.
     if ((postsResult.data ?? []).length === 0 && !postsResult.error) {
       await new Promise((resolve) => window.setTimeout(resolve, 300));
-      const retry = await supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds").eq("author_id", user.id).order("created_at", { ascending: false }).limit(30);
+      const retry = await supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
     let data = profileResult.data as Profile | null;
@@ -64,8 +73,13 @@ export default function ProfilePage() {
     }
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
-    const rawStats = statsResult.data?.[0] as { gists?: number; followers?: number; following?: number } | undefined;
-    setStats({ posts: Number(rawStats?.gists ?? 0), likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
+    setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
+    const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
+    const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
+    // Prefer the direct exact count, but do not let an RLS-filtered zero hide a
+    // valid aggregate count returned by the profile stats RPC.
+    const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
+    setStats({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
@@ -88,6 +102,27 @@ export default function ProfilePage() {
     const liked = new Set((likesResult.data ?? []).filter((row: { user_id: string }) => row.user_id === user.id).map((row: { post_id: string }) => row.post_id));
     const saved = new Set((savesResult.data ?? []).filter((row: { user_id: string }) => row.user_id === user.id).map((row: { post_id: string }) => row.post_id));
     setPosts(rawPosts.map((post) => ({ ...post, likes: likeCounts[post.id] ?? 0, comments: commentCounts[post.id] ?? 0, saves: saveCounts[post.id] ?? 0, shares: shareCounts[post.id] ?? 0, liked: liked.has(post.id), saved: saved.has(post.id) })));
+  }
+
+  async function loadSavedPosts() {
+    setSavedLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.replace("/auth"); setSavedLoading(false); return; }
+    const { data: saves, error: savesError } = await supabase.from("saves").select("post_id").eq("user_id", user.id).order("created_at", { ascending: false });
+    if (savesError) { setError(savesError.message); setSavedLoading(false); return; }
+    const ids = (saves ?? []).map((row) => row.post_id);
+    if (!ids.length) { setSavedPosts([]); setSavedLoaded(true); setSavedLoading(false); return; }
+    const { data, error: postsError } = await supabase.from("posts").select("id,body,content_type,media_url,category,created_at,voice_duration_seconds").in("id", ids);
+    if (postsError) { setError(postsError.message); setSavedLoading(false); return; }
+    const byId = new Map((data ?? []).map((post) => [post.id, post as SavedProfilePost]));
+    setSavedPosts(ids.map((id) => byId.get(id)).filter((post): post is SavedProfilePost => Boolean(post)));
+    setSavedLoaded(true);
+    setSavedLoading(false);
+  }
+
+  function selectProfileTab(tab: "posts" | "replies" | "saved") {
+    setActiveTab(tab);
+    if (tab === "saved" && !savedLoaded && !savedLoading) void loadSavedPosts();
   }
 
   useEffect(() => { void loadProfile(); }, [supabase]);
@@ -162,22 +197,28 @@ export default function ProfilePage() {
     <section className="profile-wrap">
       <section className="profile-hero profile-hero-with-cover">
         <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
-        <div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div>
-        <h1>{profile?.display_name || displayName || "Gista User"}</h1>
-        {profileUsername && <p className="profile-username">@{profileUsername}</p>}
-        {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-        <div className="profile-stats"><div><strong>{stats.likes}</strong><span>Total Likes</span></div><Link href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
-        <div className="profile-actions"><button className="profile-primary" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button><Link className="profile-secondary" href="/saved">Saved Posts</Link></div>
+        <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
+        <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
+        <div className="profile-stats profile-stats-two"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><div className="profile-stat-item"><strong>{stats.posts}</strong><span>Posts</span></div></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
       {edit&&<section className="profile-editor"><div className="editor-heading"><div><h2>Edit profile</h2><p>Update your name, username and bio.</p></div><UserRound size={22}/></div><label>Display name<input value={displayName} maxLength={60} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your display name" /></label><label>Username<div className="username-input"><span>@</span><input value={username} maxLength={30} onChange={(e)=>setUsername(e.target.value.replace(/\s/g,""))} placeholder="username" /></div></label><label>Bio<textarea value={bio} maxLength={160} onChange={(e)=>setBio(e.target.value)} placeholder="Tell people about yourself…" /><small>{bio.length}/160</small></label><button className="profile-save" type="button" onClick={()=>void saveProfile()} disabled={saving}><Check size={17}/> {saving?"Saving…":"Save changes"}</button></section>}
-      <section className="profile-content" id="my-posts"><div className="section-title"><h2>Posts</h2><span>{stats.posts}</span></div>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
-        <div className="post-head"><div className="avatar" style={{overflow:"hidden"}}>{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:initials}</div><div className="identity"><strong>{profile?.display_name||displayName||"Gista User"}</strong><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
-        <Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Post" loading="lazy"/>}</Link>
-        {post.content_type==="voice"&&post.media_url&&<div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds}/></div>}
-        <div className="gist-status"><span className="dot">●</span>{post.status?post.status.charAt(0).toUpperCase()+post.status.slice(1):"Growing"}<Link href={"/post/"+post.id+"?dna=1"}>Post DNA</Link></div>
-        <div className="actions profile-gist-actions"><button type="button" className={post.liked?"liked":""} onClick={()=>void toggleLike(post)} disabled={busy===post.id+"l"} aria-label="Like Post"><Heart size={18} fill={post.liked?"currentColor":"none"}/> {post.likes}</button><Link className="feed-action-link" href={"/post/"+post.id+"?comments=1"} aria-label="Comments"><MessageCircle size={18}/> {post.comments}</Link><button type="button" onClick={()=>void sharePost(post)} aria-label="Share Post"><Share2 size={18}/> {post.shares}</button><button type="button" className={post.saved?"saved-action":""} onClick={()=>void toggleSave(post)} disabled={busy===post.id+"s"} aria-label={post.saved?"Unsave Post":"Save Post"}><Bookmark size={18} fill={post.saved?"currentColor":"none"}/> {post.saves}</button></div>
-      </article>)}</div>}</section>
+      <section className="profile-content" id="my-posts">
+        <nav className="profile-tabs" aria-label="Profile sections">
+          <button type="button" className={activeTab==="posts"?"active":""} aria-pressed={activeTab==="posts"} onClick={()=>selectProfileTab("posts")}>Posts</button>
+          <button type="button" className={activeTab==="replies"?"active":""} aria-pressed={activeTab==="replies"} onClick={()=>selectProfileTab("replies")}>Replies</button>
+          <button type="button" className={activeTab==="saved"?"active":""} aria-pressed={activeTab==="saved"} onClick={()=>selectProfileTab("saved")}>Saved Posts</button>
+        </nav>
+        {activeTab==="replies" ? <div className="profile-replies">{replies.length===0?<div className="profile-empty"><h3>No Replies yet</h3><p>Your replies to other people’s Posts will appear here.</p></div>:replies.map((reply)=><article className="profile-reply" key={reply.id}><span className="profile-reply-label">You replied to a Post</span>{reply.body&&<p>{reply.body}</p>}<Link href={"/post/"+reply.post_id}>View original Post{reply.posts?.body?": "+reply.posts.body.slice(0,100):""}</Link><small>{new Date(reply.created_at).toLocaleString()}</small></article>)}</div>
+        : activeTab==="saved" ? <div className="profile-saved-posts">{savedLoading?<div className="feed-skeleton" aria-label="Loading saved Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:savedPosts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Saved Posts yet</h3><p>Posts you bookmark will appear here.</p><Link href="/" className="profile-primary">Discover Posts</Link></div>:savedPosts.map((post)=><article className="profile-gist profile-saved-gist" key={post.id}><div className="gist-status"><span className="dot">●</span>Saved Post <span>{new Date(post.created_at).toLocaleDateString()}</span></div><Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Saved Post" loading="lazy"/>}</Link>{post.content_type==="voice"&&post.media_url&&<VoicePlayer src={post.media_url} className="voice-player feed-voice-player"/>}<Link className="profile-saved-open" href={"/post/"+post.id}>Open Post</Link></article>)}</div>
+        : <>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="feed profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
+          <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile"><strong>{profile?.display_name||displayName||"Gista User"}</strong></Link><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
+          <Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Post" loading="lazy"/>}</Link>
+          {post.content_type==="voice"&&post.media_url&&<div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds}/></div>}
+          <div className="gist-status"><span className="dot">●</span>{post.status?post.status.charAt(0).toUpperCase()+post.status.slice(1):"Growing"}<Link href={"/post/"+post.id+"?dna=1"}>Post DNA</Link></div>
+          <div className="actions profile-gist-actions"><button type="button" className={post.liked?"liked":""} onClick={()=>void toggleLike(post)} disabled={busy===post.id+"l"} aria-label="Like Post"><Heart size={18} fill={post.liked?"currentColor":"none"}/> {post.likes}</button><Link className="feed-action-link" href={"/post/"+post.id+"?comments=1"} aria-label="Comments"><MessageCircle size={18}/> {post.comments}</Link><button type="button" onClick={()=>void sharePost(post)} aria-label="Share Post"><Share2 size={18}/> {post.shares}</button><button type="button" className={post.saved?"saved-action":""} onClick={()=>void toggleSave(post)} disabled={busy===post.id+"s"} aria-label={post.saved?"Unsave Post":"Save Post"}><Bookmark size={18} fill={post.saved?"currentColor":"none"}/> {post.saves}</button></div>
+        </article>)}</div>}</>}
+      </section>
       <button className="profile-logout" type="button" onClick={()=>void signOut()}>Log out</button>
     </section>
     <BottomNav active="profile"/>
