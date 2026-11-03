@@ -44,7 +44,7 @@ export default function PostPage() {
       commentIds.length ? supabase.from("response_likes").select("response_id,user_id").in("response_id", commentIds) : Promise.resolve({ data: [] as { response_id: string; user_id: string }[] }),
       replyIds.length ? supabase.from("reply_likes").select("reply_id,user_id").in("reply_id", replyIds) : Promise.resolve({ data: [] as { reply_id: string; user_id: string }[] }),
       currentUserId ? supabase.from("likes").select("post_id").eq("post_id", id).eq("user_id", currentUserId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      supabase.from("verified_profiles").select("profile_id").eq("profile_id", rawPost.author_id).eq("verification_type", "official").maybeSingle(),
+      supabase.from("verified_profiles").select("profile_id").eq("profile_id", rawPost.author_id).maybeSingle(),
     ]);
     if (sequence !== commentLoadSequence.current) return;
     const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile as Profile])); const commentLikes: Record<string, number> = {}; const replyLikes: Record<string, number> = {}; const likedComments = new Set<string>(); const likedReplies = new Set<string>();
