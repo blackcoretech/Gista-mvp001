@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
   const [edit, setEdit] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -72,7 +73,11 @@ export default function ProfilePage() {
       data = created.data as Profile | null;
     }
     if (profileResult.error && !data) setError(profileResult.error.message);
-    if (data) { writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? ""); }
+    if (data) {
+      writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? "");
+      const { data: verification, error: verificationError } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle();
+      if (!verificationError) setIsVerified(!!verification);
+    } else { setIsVerified(false); }
     setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
     const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
@@ -126,6 +131,41 @@ export default function ProfilePage() {
   }
 
   useEffect(() => { void loadProfile(); }, [supabase]);
+
+  // Keep the own-profile post badges consistent with the public profile when
+  // an administrator grants or revokes verification while this page is open.
+  useEffect(() => {
+    if (!profile?.id) return;
+    let active = true;
+    const refreshVerification = async () => {
+      const { data, error } = await supabase
+        .from("verified_profiles")
+        .select("profile_id")
+        .eq("profile_id", profile.id)
+        .maybeSingle();
+      if (active && !error) setIsVerified(!!data);
+    };
+    const channel = supabase
+      .channel("own-profile-verification-" + profile.id)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "verified_profiles",
+        filter: "profile_id=eq." + profile.id,
+      }, () => { void refreshVerification(); })
+      .subscribe();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshVerification();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [supabase, profile?.id]);
 
   async function uploadProfileMedia(file: File, kind: "avatar" | "cover") {
     setError(""); setMessage("");
@@ -212,7 +252,7 @@ export default function ProfilePage() {
         {activeTab==="replies" ? <div className="profile-replies">{replies.length===0?<div className="profile-empty"><h3>No Replies yet</h3><p>Your replies to other people’s Posts will appear here.</p></div>:replies.map((reply)=><article className="profile-reply" key={reply.id}><span className="profile-reply-label">You replied to a Post</span>{reply.body&&<p>{reply.body}</p>}<Link href={"/post/"+reply.post_id}>View original Post{reply.posts?.body?": "+reply.posts.body.slice(0,100):""}</Link><small>{new Date(reply.created_at).toLocaleString()}</small></article>)}</div>
         : activeTab==="saved" ? <div className="profile-saved-posts">{savedLoading?<div className="feed-skeleton" aria-label="Loading saved Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:savedPosts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Saved Posts yet</h3><p>Posts you bookmark will appear here.</p><Link href="/" className="profile-primary">Discover Posts</Link></div>:savedPosts.map((post)=><article className="profile-gist profile-saved-gist" key={post.id}><div className="gist-status"><span className="dot">●</span>Saved Post <span>{new Date(post.created_at).toLocaleDateString()}</span></div><Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Saved Post" loading="lazy"/>}</Link>{post.content_type==="voice"&&post.media_url&&<VoicePlayer src={post.media_url} className="voice-player feed-voice-player"/>}<Link className="profile-saved-open" href={"/post/"+post.id}>Open Post</Link></article>)}</div>
         : <>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="feed profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
-          <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile"><strong>{profile?.display_name||displayName||"Gista User"}</strong></Link><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
+          <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile" style={{display:"inline-flex",alignItems:"center",alignSelf:"flex-start",gap:4,maxWidth:"100%",textDecoration:"none"}}><strong>{profile?.display_name||displayName||"Gista User"}</strong>{isVerified&&<span title="Verified account" aria-label="Verified account" className="verified-badge" style={{display:"inline-flex",flex:"0 0 13px",alignItems:"center",justifyContent:"center",width:13,height:13,borderRadius:"50%",background:"#6D28D9",color:"#fff",fontSize:8,fontWeight:800,lineHeight:1}}>✓</span>}</Link><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
           <Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img src={post.media_url} alt="Post" loading="lazy"/>}</Link>
           {post.content_type==="voice"&&post.media_url&&<div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds}/></div>}
           <div className="gist-status"><span className="dot">●</span>{post.status?post.status.charAt(0).toUpperCase()+post.status.slice(1):"Growing"}<Link href={"/post/"+post.id+"?dna=1"}>Post DNA</Link></div>
