@@ -132,6 +132,41 @@ export default function ProfilePage() {
 
   useEffect(() => { void loadProfile(); }, [supabase]);
 
+  // Keep the own-profile post badges consistent with the public profile when
+  // an administrator grants or revokes verification while this page is open.
+  useEffect(() => {
+    if (!profile?.id) return;
+    let active = true;
+    const refreshVerification = async () => {
+      const { data, error } = await supabase
+        .from("verified_profiles")
+        .select("profile_id")
+        .eq("profile_id", profile.id)
+        .maybeSingle();
+      if (active && !error) setIsVerified(!!data);
+    };
+    const channel = supabase
+      .channel("own-profile-verification-" + profile.id)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "verified_profiles",
+        filter: "profile_id=eq." + profile.id,
+      }, () => { void refreshVerification(); })
+      .subscribe();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshVerification();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [supabase, profile?.id]);
+
   async function uploadProfileMedia(file: File, kind: "avatar" | "cover") {
     setError(""); setMessage("");
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return setError("Use a JPG, PNG, or WebP image.");
