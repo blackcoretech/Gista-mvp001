@@ -1021,3 +1021,39 @@ main.content {
 .profile-page .profile-post-grid .profile-gist-content > p {
   margin: 8px 0 12px !important;
 }
+
+
+/* Profile metrics: three equal columns for Followers, Posts and Responses. */
+.profile-page .profile-hero .profile-stats.profile-stats-three {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 0 !important;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-three > .profile-stat-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  min-height: 62px !important;
+  gap: 4px !important;
+  text-align: center !important;
+  border-right: 1px solid #ded5ee;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-three > .profile-stat-item:last-child {
+  border-right: 0;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-three > .profile-stat-item > strong,
+.profile-page .profile-hero .profile-stats.profile-stats-three > .profile-stat-item > span {
+  display: block !important;
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
