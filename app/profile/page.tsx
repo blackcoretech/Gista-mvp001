@@ -12,10 +12,29 @@ import BottomNav from "@/components/BottomNav";
 import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
 type Profile = { id: string; username: string | null; display_name: string | null; bio: string | null; avatar_url: string | null; cover_url: string | null };
-type MyReply = { id: string; body: string | null; content_type: string; created_at: string; post_id: string; posts: { id: string; body: string | null; created_at: string } | null };
+type MyComment = { id: string; body: string | null; content_type: string; created_at: string; post_id: string; posts: { id: string; body: string | null; created_at: string } | null };
 type Post = { id: string; content_type: string; body: string | null; media_url: string | null; category: string; status: string | null; created_at: string; voice_duration_seconds: number | null; likes: number; comments: number; saves: number; shares: number; liked: boolean; saved: boolean };
 type SavedProfilePost = { id: string; body: string | null; content_type: string; media_url: string | null; category: string; created_at: string; voice_duration_seconds: number | null };
 const PROFILE_SELECT = "id,username,display_name,bio,avatar_url,cover_url";
+
+async function countDistinctCommentedPosts(supabase: ReturnType<typeof createClient>, profileId: string) {
+  const postIds = new Set<string>();
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("responses")
+      .select("post_id")
+      .eq("author_id", profileId)
+      .order("created_at", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) break;
+    for (const row of data ?? []) if (row.post_id) postIds.add(row.post_id);
+    if ((data ?? []).length < pageSize) break;
+    offset += pageSize;
+  }
+  return postIds.size;
+}
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
 function readCachedProfile(userId:string):Profile|null{try{const raw=window.localStorage.getItem(PROFILE_CACHE_PREFIX+userId);return raw?JSON.parse(raw) as Profile:null}catch{return null}}
 function writeCachedProfile(profile:Profile){try{window.localStorage.setItem(PROFILE_CACHE_PREFIX+profile.id,JSON.stringify(profile))}catch{}}
@@ -29,13 +48,13 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [stats, setStats] = useState({ posts: 0, likes: 0, followers: 0, following: 0, responses: 0 });
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0, conversations: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
-  const [replies, setReplies] = useState<MyReply[]>([]);
+  const [comments, setComments] = useState<MyComment[]>([]);
   const [savedPosts, setSavedPosts] = useState<SavedProfilePost[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedLoaded, setSavedLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "saved">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "comments" | "saved">("posts");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -52,12 +71,10 @@ export default function ProfilePage() {
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
-    const [profileResult, statsResult, initialPostsResult, totalLikesResult, totalResponsesResult, repliesResult] = await Promise.all([
+    const [profileResult, statsResult, initialPostsResult, commentsResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
       supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
-      supabase.from("likes").select("post_id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", user.id),
-      supabase.from("responses").select("id, posts!inner(author_id)", { count: "exact", head: true }).eq("posts.author_id", user.id),
       supabase.from("responses").select("id,body,content_type,created_at,post_id,posts!inner(id,body,created_at)").eq("author_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
     let postsResult = initialPostsResult;
@@ -79,13 +96,14 @@ export default function ProfilePage() {
       const { data: verification, error: verificationError } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle();
       if (!verificationError) setIsVerified(!!verification);
     } else { setIsVerified(false); }
-    setReplies((repliesResult.data ?? []) as unknown as MyReply[]);
+    setComments((commentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
     const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
     // Prefer the direct exact count, but do not let an RLS-filtered zero hide a
     // valid aggregate count returned by the profile stats RPC.
     const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
-    setStats({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0), responses: totalResponsesResult.count ?? 0 });
+    const conversations = await countDistinctCommentedPosts(supabase, user.id);
+    setStats({ posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0), conversations });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
@@ -126,7 +144,7 @@ export default function ProfilePage() {
     setSavedLoading(false);
   }
 
-  function selectProfileTab(tab: "posts" | "replies" | "saved") {
+  function selectProfileTab(tab: "posts" | "comments" | "saved") {
     setActiveTab(tab);
     if (tab === "saved" && !savedLoaded && !savedLoading) void loadSavedPosts();
   }
@@ -240,17 +258,17 @@ export default function ProfilePage() {
         <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
         <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
         <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
-        <div className="profile-stats profile-stats-three"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><div className="profile-stat-item"><strong>{stats.posts}</strong><span>Posts</span></div><div className="profile-stat-item"><strong>{stats.responses}</strong><span>Responses</span></div></div>
+        <div className="profile-stats profile-stats-three"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link><button className="profile-stat-item" type="button" onClick={()=>{selectProfileTab("comments");window.setTimeout(()=>document.getElementById("my-posts")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}}><strong>{stats.conversations}</strong><span>Conversations</span></button></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
       {edit&&<section className="profile-editor"><div className="editor-heading"><div><h2>Edit profile</h2><p>Update your name, username and bio.</p></div><UserRound size={22}/></div><label>Display name<input value={displayName} maxLength={60} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your display name" /></label><label>Username<div className="username-input"><span>@</span><input value={username} maxLength={30} onChange={(e)=>setUsername(e.target.value.replace(/\s/g,""))} placeholder="username" /></div></label><label>Bio<textarea value={bio} maxLength={160} onChange={(e)=>setBio(e.target.value)} placeholder="Tell people about yourself…" /><small>{bio.length}/160</small></label><button className="profile-save" type="button" onClick={()=>void saveProfile()} disabled={saving}><Check size={17}/> {saving?"Saving…":"Save changes"}</button></section>}
       <section className="profile-content" id="my-posts">
         <nav className="profile-tabs" aria-label="Profile sections">
           <button type="button" className={activeTab==="posts"?"active":""} aria-pressed={activeTab==="posts"} onClick={()=>selectProfileTab("posts")}>Posts</button>
-          <button type="button" className={activeTab==="replies"?"active":""} aria-pressed={activeTab==="replies"} onClick={()=>selectProfileTab("replies")}>Replies</button>
+          <button type="button" className={activeTab==="comments"?"active":""} aria-pressed={activeTab==="comments"} onClick={()=>selectProfileTab("comments")}>Comments</button>
           <button type="button" className={activeTab==="saved"?"active":""} aria-pressed={activeTab==="saved"} onClick={()=>selectProfileTab("saved")}>Saved Posts</button>
         </nav>
-        {activeTab==="replies" ? <div className="profile-replies">{replies.length===0?<div className="profile-empty"><h3>No Replies yet</h3><p>Your replies to other people’s Posts will appear here.</p></div>:replies.map((reply)=><article className="profile-reply" key={reply.id}><span className="profile-reply-label">You replied to a Post</span>{reply.body&&<p>{reply.body}</p>}<Link href={"/post/"+reply.post_id}>View original Post{reply.posts?.body?": "+reply.posts.body.slice(0,100):""}</Link><small>{new Date(reply.created_at).toLocaleString()}</small></article>)}</div>
+        {activeTab==="comments" ? <div className="profile-replies">{comments.length===0?<div className="profile-empty"><h3>No Comments yet</h3><p>Your comments on other people’s Gists will appear here.</p></div>:comments.map((comment)=><article className="profile-reply" key={comment.id}><span className="profile-reply-label">You commented on a Gist</span>{comment.body&&<p>{comment.body}</p>}{comment.content_type==="voice"&&<span className="profile-reply-label">Voice comment</span>}<Link href={"/post/"+comment.post_id}>View Gist{comment.posts?.body?": "+comment.posts.body.slice(0,100):""}</Link><small>{new Date(comment.created_at).toLocaleString()}</small></article>)}</div>
         : activeTab==="saved" ? <div className="profile-saved-posts">{savedLoading?<div className="feed-skeleton" aria-label="Loading saved Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:savedPosts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Saved Posts yet</h3><p>Posts you bookmark will appear here.</p><Link href="/" className="profile-primary">Discover Posts</Link></div>:savedPosts.map((post)=><article className="profile-gist profile-saved-gist" key={post.id}><div className="gist-status"><span className="dot">●</span>Saved Post <span>{new Date(post.created_at).toLocaleDateString()}</span></div><Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img className="gist-media" src={post.media_url} alt="Saved Post" loading="lazy"/>}</Link>{post.content_type==="voice"&&post.media_url&&<VoicePlayer src={post.media_url} className="voice-player feed-voice-player"/>}<Link className="profile-saved-open" href={"/post/"+post.id}>Open Post</Link></article>)}</div>
         : <>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="feed profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
           <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile" style={{display:"inline-flex",alignItems:"center",alignSelf:"flex-start",gap:4,maxWidth:"100%",textDecoration:"none"}}><strong>{profile?.display_name||displayName||"Gista User"}</strong>{isVerified&&<span title="Verified account" aria-label="Verified account" className="verified-badge" style={{display:"inline-flex",flex:"0 0 13px",alignItems:"center",justifyContent:"center",width:13,height:13,borderRadius:"50%",background:"#6D28D9",color:"#fff",fontSize:8,fontWeight:800,lineHeight:1}}>✓</span>}</Link><span>@{profileUsername||"user"} · {new Date(post.created_at).toLocaleString()}</span></div><span className="category">{post.category}</span></div>
