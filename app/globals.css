@@ -1057,3 +1057,22 @@ main.content {
   padding: 0 !important;
   text-align: center !important;
 }
+
+
+/* Center the divider between the two profile metrics across the full profile card. */
+.profile-page .profile-hero .profile-stats.profile-stats-two {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  gap: 0 !important;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item {
+  min-width: 0 !important;
+  border-right: 1px solid #ded5ee !important;
+}
+.profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item:last-child {
+  border-right: 0 !important;
+}
