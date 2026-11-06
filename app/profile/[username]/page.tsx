@@ -7,6 +7,25 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import VoiceNote from "@/components/VoiceNote";
 
+async function countDistinctCommentedPosts(supabase: ReturnType<typeof createClient>, profileId: string) {
+  const postIds = new Set<string>();
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("responses")
+      .select("post_id")
+      .eq("author_id", profileId)
+      .order("created_at", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) break;
+    for (const row of data ?? []) if (row.post_id) postIds.add(row.post_id);
+    if ((data ?? []).length < pageSize) break;
+    offset += pageSize;
+  }
+  return postIds.size;
+}
+
 type Profile = {
   id: string;
   username: string;
@@ -42,7 +61,7 @@ export default function PublicProfile() {
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [following, setFollowing] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [counts, setCounts] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
+  const [counts, setCounts] = useState({ posts: 0, likes: 0, followers: 0, following: 0, conversations: 0 });
   const [posts, setPosts] = useState<PublicPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [privateMessage, setPrivateMessage] = useState("");
@@ -70,13 +89,14 @@ export default function PublicProfile() {
     }
     const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
+    const conversations = await countDistinctCommentedPosts(supabase, data.id);
     const isFollowing = !!followState.data;
     setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
     const rpcPostCount = Number(profileStats?.posts ?? profileStats?.gists ?? 0);
     // Use the strongest available count so an RLS-filtered zero from the posts
     // list cannot mask the aggregate count for a public profile.
     const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
-    setCounts({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0) });
+    setCounts({ posts: visiblePostCount, likes: totalLikesResult.count ?? 0, followers: Number(profileStats?.followers ?? 0), following: Number(profileStats?.following ?? 0), conversations });
     if (data.is_private && user?.id !== data.id && !isFollowing) { setPosts([]); setPrivateMessage("This account is private. Follow this account to see its Posts."); setLoading(false); return; }
     const ownPosts = (postsResult.data ?? []) as Array<Omit<PublicPost, "likes" | "responses" | "saves" | "shares" | "liked" | "saved">>;
     const postIds = ownPosts.map((post) => post.id);
@@ -216,9 +236,10 @@ export default function PublicProfile() {
         </h1>
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-        <div className="profile-stats profile-stats-two">
+        <div className="profile-stats profile-stats-three">
           <Link className="profile-stat-item" href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
-          <div className="profile-stat-item"><strong>{counts.posts}</strong><span>Posts</span></div>
+          <Link className="profile-stat-item" href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
+          <div className="profile-stat-item"><strong>{counts.conversations}</strong><span>Conversations</span></div>
         </div>
         {me?.id !== profile.id && <div className="profile-actions"><button className="profile-primary" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button></div>}
       </section>
