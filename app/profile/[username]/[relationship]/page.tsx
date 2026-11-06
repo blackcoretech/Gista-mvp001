@@ -88,10 +88,15 @@ export default function RelationshipPage() {
 
       if (kind === "conversations") {
         if (target.is_private && !isOwner) {
-          setComments([]);
-          setPrivateList(true);
-          setLoading(false);
-          return;
+          const followAccess = userData.user
+            ? await supabase.from("follows").select("follower_id").eq("follower_id", userData.user.id).eq("following_id", target.id).maybeSingle()
+            : null;
+          if (!followAccess?.data) {
+            setComments([]);
+            setPrivateList(true);
+            setLoading(false);
+            return;
+          }
         }
         const [commentResult, conversationCount] = await Promise.all([
           supabase.from("responses")
