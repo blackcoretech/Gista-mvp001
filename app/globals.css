@@ -1023,7 +1023,7 @@ main.content {
 }
 
 
-/* Profile metrics: three equal columns for Followers, Posts and Responses. */
+/* Profile metrics: three equal columns for Followers, Following and Conversations. */
 .profile-page .profile-hero .profile-stats.profile-stats-three {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
