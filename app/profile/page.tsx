@@ -71,7 +71,7 @@ export default function ProfilePage() {
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
-    const [profileResult, statsResult, initialPostsResult, commentsResult] = await Promise.all([
+    const [profileResult, statsResult, initialPostsResult, userCommentsResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
       supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
@@ -96,7 +96,7 @@ export default function ProfilePage() {
       const { data: verification, error: verificationError } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle();
       if (!verificationError) setIsVerified(!!verification);
     } else { setIsVerified(false); }
-    setComments((commentsResult.data ?? []) as unknown as MyComment[]);
+    setComments((userCommentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
     const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
     // Prefer the direct exact count, but do not let an RLS-filtered zero hide a
