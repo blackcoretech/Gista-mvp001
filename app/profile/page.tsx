@@ -17,24 +17,6 @@ type Post = { id: string; content_type: string; body: string | null; media_url: 
 type SavedProfilePost = { id: string; body: string | null; content_type: string; media_url: string | null; category: string; created_at: string; voice_duration_seconds: number | null };
 const PROFILE_SELECT = "id,username,display_name,bio,avatar_url,cover_url";
 
-async function countDistinctCommentedPosts(supabase: ReturnType<typeof createClient>, profileId: string) {
-  const postIds = new Set<string>();
-  const pageSize = 1000;
-  let offset = 0;
-  while (true) {
-    const { data, error } = await supabase
-      .from("responses")
-      .select("post_id")
-      .eq("author_id", profileId)
-      .order("created_at", { ascending: true })
-      .range(offset, offset + pageSize - 1);
-    if (error) break;
-    for (const row of data ?? []) if (row.post_id) postIds.add(row.post_id);
-    if ((data ?? []).length < pageSize) break;
-    offset += pageSize;
-  }
-  return postIds.size;
-}
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
 function readCachedProfile(userId:string):Profile|null{try{const raw=window.localStorage.getItem(PROFILE_CACHE_PREFIX+userId);return raw?JSON.parse(raw) as Profile:null}catch{return null}}
 function writeCachedProfile(profile:Profile){try{window.localStorage.setItem(PROFILE_CACHE_PREFIX+profile.id,JSON.stringify(profile))}catch{}}
@@ -48,7 +30,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0, conversations: 0 });
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<MyComment[]>([]);
   const [savedPosts, setSavedPosts] = useState<SavedProfilePost[]>([]);
@@ -102,8 +84,7 @@ export default function ProfilePage() {
     // Prefer the direct exact count, but do not let an RLS-filtered zero hide a
     // valid aggregate count returned by the profile stats RPC.
     const visiblePostCount = Math.max(Number(postsResult.count ?? 0), rpcPostCount, postsResult.data?.length ?? 0);
-    const conversations = await countDistinctCommentedPosts(supabase, user.id);
-    setStats({ posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0), conversations });
+    setStats({ posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
     if (!ids.length) { setPosts([]); setLoading(false); return; }
@@ -258,7 +239,7 @@ export default function ProfilePage() {
         <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
         <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
         <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
-        <div className="profile-stats profile-stats-three"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link><button className="profile-stat-item" type="button" style={{background:"transparent",border:0,color:"inherit",font:"inherit",padding:0,cursor:"pointer"}} onClick={()=>{selectProfileTab("comments");window.setTimeout(()=>document.getElementById("my-posts")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}}><strong>{stats.conversations}</strong><span>Conversations</span></button></div>
+        <div className="profile-stats profile-stats-two"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
       {edit&&<section className="profile-editor"><div className="editor-heading"><div><h2>Edit profile</h2><p>Update your name, username and bio.</p></div><UserRound size={22}/></div><label>Display name<input value={displayName} maxLength={60} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your display name" /></label><label>Username<div className="username-input"><span>@</span><input value={username} maxLength={30} onChange={(e)=>setUsername(e.target.value.replace(/\s/g,""))} placeholder="username" /></div></label><label>Bio<textarea value={bio} maxLength={160} onChange={(e)=>setBio(e.target.value)} placeholder="Tell people about yourself…" /><small>{bio.length}/160</small></label><button className="profile-save" type="button" onClick={()=>void saveProfile()} disabled={saving}><Check size={17}/> {saving?"Saving…":"Save changes"}</button></section>}
