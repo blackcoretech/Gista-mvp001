@@ -25,8 +25,21 @@ async function loadVerifiedAccounts(supabase: ReturnType<typeof createClient>): 
     .filter((row) => Boolean(row.username)) as VerifiedAccount[];
 }
 
+function hasVerifiedBadge(target: Element) {
+  // React-rendered badges sit beside the name in the same identity row, not
+  // inside the <strong>. Check both the name and its direct siblings so the
+  // global injector never adds a second badge below/inside the user's name.
+  const badgeSelector =
+    "[data-gista-verified-badge], .verified-badge, [aria-label=\"Verified account\"]";
+  const existingOnName = target.querySelector(`:scope > ${badgeSelector}`);
+  const existingBesideName = target.parentElement?.querySelector(
+    `:scope > ${badgeSelector}`
+  );
+  return Boolean(existingOnName || existingBesideName);
+}
+
 function addBadge(target: Element, color: string) {
-  if (target.querySelector(":scope > [data-gista-verified-badge]")) return;
+  if (hasVerifiedBadge(target)) return;
 
   const badge = document.createElement("span");
   badge.dataset.gistaVerifiedBadge = "true";
@@ -62,10 +75,25 @@ export default function VerifiedBadgeInjector() {
 
     const apply = () => {
       if (cancelled) return;
+
+      // On the dedicated Post page, the page itself owns the verified badge.
+      // If this global injector ran before a client-side route change, remove
+      // only badges created by this injector and leave the original React
+      // .verified-badge immediately after the author's name untouched.
+      if (window.location.pathname.startsWith("/post/")) {
+        document
+          .querySelectorAll(".post-detail [data-gista-verified-badge]")
+          .forEach((badge) => badge.remove());
+        return;
+      }
+
       const byUsername = new Map(verifiedAccounts.map((account) => [account.username, account.badge_color]));
 
       document.querySelectorAll("strong").forEach((name) => {
-        if (name.querySelector(":scope > [data-gista-verified-badge]")) return;
+        // The post detail card renders its original React badge immediately
+        // after the author name. Never inject or alter badges in that card.
+        if (name.closest(".post-detail")) return;
+        if (hasVerifiedBadge(name)) return;
         const parent = name.parentElement;
         if (!parent || parent.classList.contains("notification-identity")) return;
 

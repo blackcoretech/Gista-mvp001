@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import VoiceNote from "@/components/VoiceNote";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 type Profile = {
   id: string;
@@ -68,7 +69,7 @@ export default function PublicProfile() {
       const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
-    const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).maybeSingle();
+    const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
     setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
@@ -122,7 +123,7 @@ export default function PublicProfile() {
         .from("verified_profiles")
         .select("profile_id")
         .eq("profile_id", profile.id)
-        
+        .eq("verification_type", "official")
         .maybeSingle();
       if (active && !error) setIsVerified(!!data);
     };
@@ -205,17 +206,19 @@ export default function PublicProfile() {
     <section className="profile-wrap">
       <section className="profile-hero profile-hero-with-cover public-profile-hero">
         <div className="profile-cover">{profile.cover_url && <img src={profile.cover_url} alt="" />}</div>
-        <div className="profile-photo-wrap">
-          <div className="profile-photo">
-            {profile.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <span>{profile.display_name?.[0]?.toUpperCase() ?? "G"}</span>}
+        <div className="profile-identity-row">
+          <div className="profile-photo-wrap">
+            <div className="profile-photo">
+              {profile.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <span>{profile.display_name?.[0]?.toUpperCase() ?? "G"}</span>}
+            </div>
           </div>
+          {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
-        <h1>
-          {profile.display_name ?? "Gista User"}
-          {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 13, height: 13, marginLeft: 4, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1, verticalAlign: "middle" }}>✓</span>}
-        </h1>
-        <p className="profile-username">@{profile.username}</p>
-        {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        <div className="profile-identity-copy">
+          <h1>{profile.display_name ?? "Gista User"}{isVerified && <VerifiedBadge />}</h1>
+          <p className="profile-username">@{profile.username}</p>
+          {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        </div>
         <div className="profile-stats profile-stats-two">
           <Link className="profile-stat-item" href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
           <Link className="profile-stat-item" href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
@@ -230,7 +233,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username}><strong>{profile.display_name ?? "Gista User"}</strong>{isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 13, height: 13, marginLeft: 4, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1, verticalAlign: "middle" }}>✓</span>}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>
