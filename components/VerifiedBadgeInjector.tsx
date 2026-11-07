@@ -78,6 +78,9 @@ export default function VerifiedBadgeInjector() {
       const byUsername = new Map(verifiedAccounts.map((account) => [account.username, account.badge_color]));
 
       document.querySelectorAll("strong").forEach((name) => {
+        // The post detail card renders its original React badge immediately
+        // after the author name. Never inject or alter badges in that card.
+        if (name.closest(".post-detail")) return;
         if (hasVerifiedBadge(name)) return;
         const parent = name.parentElement;
         if (!parent || parent.classList.contains("notification-identity")) return;
