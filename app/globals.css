@@ -1076,3 +1076,24 @@ main.content {
 .profile-page .profile-hero .profile-stats.profile-stats-two > .profile-stat-item:last-child {
   border-right: 0 !important;
 }
+
+
+/* Keep the verified mark beside the author name on the opened Post page. */
+.post-detail .identity > a {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  line-height: 1.2;
+}
+.post-detail .identity > a strong {
+  display: inline;
+}
+.post-detail .identity > a .verified-badge {
+  display: inline-flex;
+  flex: 0 0 13px;
+  align-items: center;
+  justify-content: center;
+}
