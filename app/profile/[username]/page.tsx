@@ -214,10 +214,7 @@ export default function PublicProfile() {
           {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
         <div className="profile-identity-copy">
-          <div role="heading" aria-level={1} className="public-profile-display-name-row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%", minWidth: 0 }}>
-            <h1 style={{ display: "block", minWidth: 0, margin: 0, fontSize: 24, lineHeight: 1.15 }}>{profile.display_name ?? "Gista User"}</h1>
-            {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", visibility: "visible", opacity: 1, flex: "0 0 13px", alignItems: "center", justifyContent: "center", width: 13, height: 13, margin: 0, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}
-          </div>
+          <h1>{profile.display_name ?? "Gista User"}{isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", verticalAlign: "middle", marginLeft: 5, width: 13, height: 13, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}</h1>
           <p className="profile-username">@{profile.username}</p>
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         </div>
