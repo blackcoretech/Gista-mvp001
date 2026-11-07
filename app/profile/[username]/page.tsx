@@ -210,9 +210,9 @@ export default function PublicProfile() {
             {profile.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <span>{profile.display_name?.[0]?.toUpperCase() ?? "G"}</span>}
           </div>
         </div>
-        <h1>
+        <h1 style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, maxWidth: "100%" }}>
           {profile.display_name ?? "Gista User"}
-          {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 13, height: 13, marginLeft: 4, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1, verticalAlign: "middle" }}>✓</span>}
+          {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", flex: "0 0 13px", alignItems: "center", justifyContent: "center", width: 13, height: 13, margin: 0, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}
         </h1>
         <p className="profile-username">@{profile.username}</p>
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
@@ -230,7 +230,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username}><strong>{profile.display_name ?? "Gista User"}</strong>{isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 13, height: 13, marginLeft: 4, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1, verticalAlign: "middle" }}>✓</span>}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", flex: "0 0 13px", alignItems: "center", justifyContent: "center", width: 13, height: 13, margin: 0, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>
