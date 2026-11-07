@@ -132,6 +132,29 @@ export default function ProfilePage() {
 
   useEffect(() => { void loadProfile(); }, [supabase]);
 
+  // Keep this profile current when one of the user's Posts is edited elsewhere.
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("own-profile-post-updates-" + profile.id)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "posts",
+        filter: "author_id=eq." + profile.id,
+      }, (payload) => {
+        const updated = payload.new as Pick<Post, "id" | "body" | "category" | "media_url">;
+        setPosts((current) => current.map((post) => post.id === updated.id
+          ? { ...post, body: updated.body, category: updated.category, media_url: updated.media_url }
+          : post));
+        setSavedPosts((current) => current.map((post) => post.id === updated.id
+          ? { ...post, body: updated.body, category: updated.category, media_url: updated.media_url }
+          : post));
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [supabase, profile?.id]);
+
   // Keep the own-profile post badges consistent with the public profile when
   // an administrator grants or revokes verification while this page is open.
   useEffect(() => {
