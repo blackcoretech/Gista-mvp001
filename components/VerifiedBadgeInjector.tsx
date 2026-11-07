@@ -75,6 +75,18 @@ export default function VerifiedBadgeInjector() {
 
     const apply = () => {
       if (cancelled) return;
+
+      // On the dedicated Post page, the page itself owns the verified badge.
+      // If this global injector ran before a client-side route change, remove
+      // only badges created by this injector and leave the original React
+      // .verified-badge immediately after the author's name untouched.
+      if (window.location.pathname.startsWith("/post/")) {
+        document
+          .querySelectorAll(".post-detail [data-gista-verified-badge]")
+          .forEach((badge) => badge.remove());
+        return;
+      }
+
       const byUsername = new Map(verifiedAccounts.map((account) => [account.username, account.badge_color]));
 
       document.querySelectorAll("strong").forEach((name) => {
