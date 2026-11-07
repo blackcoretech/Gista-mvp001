@@ -26,12 +26,16 @@ async function loadVerifiedAccounts(supabase: ReturnType<typeof createClient>): 
 }
 
 function hasVerifiedBadge(target: Element) {
-  // Some pages render the badge directly in React (for example, the Post detail
-  // header). The global injector must recognize that badge instead of adding a
-  // second, DOM-injected copy beside it.
-  return Boolean(target.querySelector(
-    ":scope > [data-gista-verified-badge], :scope > .verified-badge, :scope > [aria-label=\"Verified account\"]"
-  ));
+  // React-rendered badges sit beside the name in the same identity row, not
+  // inside the <strong>. Check both the name and its direct siblings so the
+  // global injector never adds a second badge below/inside the user's name.
+  const badgeSelector =
+    "[data-gista-verified-badge], .verified-badge, [aria-label=\"Verified account\"]";
+  const existingOnName = target.querySelector(`:scope > ${badgeSelector}`);
+  const existingBesideName = target.parentElement?.querySelector(
+    `:scope > ${badgeSelector}`
+  );
+  return Boolean(existingOnName || existingBesideName);
 }
 
 function addBadge(target: Element, color: string) {
