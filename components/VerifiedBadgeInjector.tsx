@@ -25,8 +25,17 @@ async function loadVerifiedAccounts(supabase: ReturnType<typeof createClient>): 
     .filter((row) => Boolean(row.username)) as VerifiedAccount[];
 }
 
+function hasVerifiedBadge(target: Element) {
+  // Some pages render the badge directly in React (for example, the Post detail
+  // header). The global injector must recognize that badge instead of adding a
+  // second, DOM-injected copy beside it.
+  return Boolean(target.querySelector(
+    ":scope > [data-gista-verified-badge], :scope > .verified-badge, :scope > [aria-label=\"Verified account\"]"
+  ));
+}
+
 function addBadge(target: Element, color: string) {
-  if (target.querySelector(":scope > [data-gista-verified-badge]")) return;
+  if (hasVerifiedBadge(target)) return;
 
   const badge = document.createElement("span");
   badge.dataset.gistaVerifiedBadge = "true";
@@ -65,7 +74,7 @@ export default function VerifiedBadgeInjector() {
       const byUsername = new Map(verifiedAccounts.map((account) => [account.username, account.badge_color]));
 
       document.querySelectorAll("strong").forEach((name) => {
-        if (name.querySelector(":scope > [data-gista-verified-badge]")) return;
+        if (hasVerifiedBadge(name)) return;
         const parent = name.parentElement;
         if (!parent || parent.classList.contains("notification-identity")) return;
 
