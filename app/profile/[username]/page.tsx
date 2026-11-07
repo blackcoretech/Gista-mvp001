@@ -205,17 +205,22 @@ export default function PublicProfile() {
     <section className="profile-wrap">
       <section className="profile-hero profile-hero-with-cover public-profile-hero">
         <div className="profile-cover">{profile.cover_url && <img src={profile.cover_url} alt="" />}</div>
-        <div className="profile-photo-wrap">
-          <div className="profile-photo">
-            {profile.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <span>{profile.display_name?.[0]?.toUpperCase() ?? "G"}</span>}
+        <div className="profile-identity-row">
+          <div className="profile-photo-wrap">
+            <div className="profile-photo">
+              {profile.avatar_url ? <img src={profile.avatar_url} alt="Profile" /> : <span>{profile.display_name?.[0]?.toUpperCase() ?? "G"}</span>}
+            </div>
           </div>
+          {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
-        <h1 style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, maxWidth: "100%" }}>
-          {profile.display_name ?? "Gista User"}
-          {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", flex: "0 0 13px", alignItems: "center", justifyContent: "center", width: 13, height: 13, margin: 0, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}
-        </h1>
-        <p className="profile-username">@{profile.username}</p>
-        {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        <div className="profile-identity-copy">
+          <h1 style={{ display: "inline-flex", alignItems: "center", gap: 5, maxWidth: "100%" }}>
+            {profile.display_name ?? "Gista User"}
+            {isVerified && <span title="Verified account" aria-label="Verified account" className="verified-badge" style={{ display: "inline-flex", flex: "0 0 13px", alignItems: "center", justifyContent: "center", width: 13, height: 13, margin: 0, borderRadius: "50%", background: "#6D28D9", color: "#fff", fontSize: 8, fontWeight: 800, lineHeight: 1 }}>✓</span>}
+          </h1>
+          <p className="profile-username">@{profile.username}</p>
+          {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        </div>
         <div className="profile-stats profile-stats-two">
           <Link className="profile-stat-item" href={"/profile/" + profile.username + "/followers"}><strong>{counts.followers}</strong><span>Followers</span></Link>
           <Link className="profile-stat-item" href={"/profile/" + profile.username + "/following"}><strong>{counts.following}</strong><span>Following</span></Link>
