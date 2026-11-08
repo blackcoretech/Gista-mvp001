@@ -13,6 +13,8 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);
+  const [joinedCount, setJoinedCount] = useState(participantCount);
+  const [postAuthorId, setPostAuthorId] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [myId, setMyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,10 +29,13 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
       const { data: auth } = await supabase.auth.getUser();
       const currentUserId = auth.user?.id ?? null;
       if (active) setMyId(currentUserId);
+      const { data: post } = await supabase.from("posts").select("author_id").eq("id", postId).maybeSingle();
+      const creatorId = post?.author_id ? String(post.author_id) : null;
+      if (active) setPostAuthorId(creatorId);
       const { data: responseRows, error: responseError } = await supabase.from("responses").select("author_id,created_at").eq("post_id", postId).order("created_at", { ascending: true }).limit(1000);
       if (responseError) { if (active) { setError("Couldn’t load the people who joined. Please try again."); setLoading(false); } return; }
-      const ids = [...new Set((responseRows ?? []).map((row) => String(row.author_id)))];
-      if (!ids.length) { if (active) { setPeople([]); setFollowingIds(new Set()); setLoading(false); } return; }
+      const ids = [...new Set((responseRows ?? []).map((row) => String(row.author_id)).filter((id) => !creatorId || id !== creatorId))];
+      if (!ids.length) { if (active) { setPeople([]); setFollowingIds(new Set()); setJoinedCount(0); setLoading(false); } return; }
       const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id,display_name,username,avatar_url").in("id", ids);
       if (profilesError) { if (active) { setError("Couldn’t load participant profiles. Please try again."); setLoading(false); } return; }
       const byId = new Map((profiles ?? []).map((person) => [person.id, person as Person]));
@@ -40,7 +45,7 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
         const { data: rows } = await supabase.from("follows").select("following_id").eq("follower_id", currentUserId).in("following_id", ordered.map((person) => person.id));
         followed = new Set((rows ?? []).map((row) => String(row.following_id)));
       }
-      if (active) { setPeople(ordered); setFollowingIds(followed); setLoading(false); }
+      if (active) { setPeople(ordered); setFollowingIds(followed); setJoinedCount(ids.length); setLoading(false); }
     };
     void load();
     return () => { active = false; };
@@ -62,16 +67,18 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
     setBusyId(null);
   }
 
+  if (!loading && joinedCount === 0) return null;
+  const visiblePreview = previewParticipants.filter((person) => !postAuthorId || person.id !== postAuthorId);
   return <>
-    <button type="button" className="gist-joined gist-joined-trigger" onClick={() => setOpen(true)} aria-label={"View " + participantCount + " people who joined this conversation"}>
-      <span className="gist-joined-avatars">{previewParticipants.map((person) => <span className="gist-joined-avatar" key={person.id} title={person.display_name ?? person.username ?? "Participant"}>{person.avatar_url ? <img src={person.avatar_url} alt="" loading="lazy" /> : (person.display_name?.[0] ?? person.username?.[0] ?? "G").toUpperCase()}</span>)}</span>
-      <span className="gist-joined-count">{participantCount.toLocaleString()} joined</span>
+    <button type="button" className="gist-joined gist-joined-trigger" onClick={() => setOpen(true)} aria-label={"View " + joinedCount + " people who joined this conversation"}>
+      <span className="gist-joined-avatars">{visiblePreview.map((person) => <span className="gist-joined-avatar" key={person.id} title={person.display_name ?? person.username ?? "Participant"}>{person.avatar_url ? <img src={person.avatar_url} alt="" loading="lazy" /> : (person.display_name?.[0] ?? person.username?.[0] ?? "G").toUpperCase()}</span>)}</span>
+      <span className="gist-joined-count">{joinedCount.toLocaleString()} joined</span>
       <span className="gist-joined-hint">View people</span>
     </button>
     {open && <div className="joined-sheet-backdrop" onClick={() => setOpen(false)}>
       <section className="joined-sheet" role="dialog" aria-modal="true" aria-labelledby="joined-sheet-title" onClick={(event) => event.stopPropagation()}>
         <div className="joined-sheet-handle" />
-        <header className="joined-sheet-header"><div><h2 id="joined-sheet-title">People in this conversation</h2><p>{participantCount.toLocaleString()} {participantCount === 1 ? "person has" : "people have"} joined</p></div><button type="button" className="joined-sheet-close" onClick={() => setOpen(false)} aria-label="Close"><X size={20} /></button></header>
+        <header className="joined-sheet-header"><div><h2 id="joined-sheet-title">People in this conversation</h2><p>{joinedCount.toLocaleString()} {joinedCount === 1 ? "person has" : "people have"} joined</p></div><button type="button" className="joined-sheet-close" onClick={() => setOpen(false)} aria-label="Close"><X size={20} /></button></header>
         <div className="joined-sheet-list">
           {loading ? <p className="joined-sheet-state">Loading people…</p> : error ? <p className="joined-sheet-state">{error}</p> : people.length === 0 ? <p className="joined-sheet-state">No participants to show yet.</p> : people.map((person) => <div className="joined-person" key={person.id}>
             <Link className="joined-person-profile" href={person.username ? "/profile/" + person.username : "/profile"} onClick={() => setOpen(false)}>
