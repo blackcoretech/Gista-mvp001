@@ -7,6 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import VoicePlayer from "@/components/voice-player";
 import BottomNav from "@/components/BottomNav";
+import JoinedParticipants from "@/components/JoinedParticipants";
 import LandingPage from "@/components/LandingPage";
 import { LONG_AWAY_REFRESH_PENDING_KEY, LONG_AWAY_REFRESH_EVENT, LAST_HIDDEN_AT_KEY, LONG_AWAY_REFRESH_THRESHOLD_MS } from "@/lib/feed-session";
 import { isExplicitBrowserReload } from "@/lib/feed-navigation";
@@ -109,7 +110,7 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
           <Link className="profile-gist-content" href={"/post/"+p.id}>{p.body&&<p>{p.body}</p>} {p.content_type==="photo"&&p.media_url&&<img className="gist-media" src={p.media_url} alt="Post" loading={i===0?"eager":"lazy"}/>}</Link>
           {p.content_type==="voice"&&p.media_url&&<div className="profile-gist-voice"><VoicePlayer src={p.media_url}/></div>}
           <div className="gist-status"><span className="dot">●</span>{p.status?p.status.charAt(0).toUpperCase()+p.status.slice(1):"Growing"}<Link href={"/post/"+p.id+"?dna=1"}>Post DNA</Link></div>
-          {p.participantCount>0&&<div className="gist-joined" aria-label={`${p.participantCount} people joined this discussion`}><span className="gist-joined-avatars">{p.participants.map(person=><span className="gist-joined-avatar" key={person.id} title={person.display_name??person.username??"Participant"}>{person.avatar_url?<img src={person.avatar_url} alt="" loading="lazy"/>:(person.display_name?.[0]??person.username?.[0]??"G").toUpperCase()}</span>)}</span><span className="gist-joined-count">{p.participantCount.toLocaleString()} joined</span></div>}
+          {p.participantCount>0&&<JoinedParticipants postId={p.id} participantCount={p.participantCount} previewParticipants={p.participants}/>}
           <div className="actions profile-gist-actions"><button type="button" className={p.liked?"liked":""} onClick={()=>void toggleLike(p)} disabled={busy===p.id+"l"} aria-label="Like Post"><Heart size={18} fill={p.liked?"currentColor":"none"}/> {p.likes}</button><Link className="feed-action-link" href={"/post/"+p.id+"?comments=1"} aria-label="Comments"><MessageCircle size={18}/> {p.responses}</Link><button type="button" onClick={()=>void sharePost(p)} aria-label="Share Post"><Share2 size={18}/> {p.shares}</button><button type="button" className={p.saved?"saved-action":""} onClick={()=>void toggleSave(p)} disabled={busy===p.id+"s"} aria-label={p.saved?"Unsave Post":"Save Post"} title={p.saved?"Unsave post":"Save post"}><Bookmark size={18} fill={p.saved?"currentColor":"none"}/> {p.saves}</button></div>
         </article>)}
       </div>
