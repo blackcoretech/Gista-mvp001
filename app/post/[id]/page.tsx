@@ -47,10 +47,13 @@ export default function PostPage() {
       commentIds.length ? supabase.from("response_likes").select("response_id,user_id").in("response_id", commentIds) : Promise.resolve({ data: [] as { response_id: string; user_id: string }[] }),
       replyIds.length ? supabase.from("reply_likes").select("reply_id,user_id").in("reply_id", replyIds) : Promise.resolve({ data: [] as { reply_id: string; user_id: string }[] }),
       currentUserId ? supabase.from("likes").select("post_id").eq("post_id", id).eq("user_id", currentUserId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      supabase.from("verified_profiles").select("profile_id").eq("profile_id", rawPost.author_id).maybeSingle(),\n      supabase.from("verified_profiles").select("profile_id").in("profile_id", uniqueAuthorIds),
+      supabase.from("verified_profiles").select("profile_id").eq("profile_id", rawPost.author_id).maybeSingle(),
+      supabase.from("verified_profiles").select("profile_id").in("profile_id", uniqueAuthorIds),
     ]);
     if (sequence !== commentLoadSequence.current) return;
-    const verifiedAuthorIds = new Set((allVerificationResult.data ?? []).map((row) => row.profile_id));\n    const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.id, { ...(profile as Profile), isVerified: verifiedAuthorIds.has(profile.id) }])); const commentLikes: Record<string, number> = {}; const replyLikes: Record<string, number> = {}; const likedComments = new Set<string>(); const likedReplies = new Set<string>();
+    const verifiedAuthorIds = new Set((allVerificationResult.data ?? []).map((row) => row.profile_id));
+    const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.id, { ...(profile as Profile), isVerified: verifiedAuthorIds.has(profile.id) }]));
+    const commentLikes: Record<string, number> = {}; const replyLikes: Record<string, number> = {}; const likedComments = new Set<string>(); const likedReplies = new Set<string>();
     (commentLikesResult.data ?? []).forEach((item) => { commentLikes[item.response_id] = (commentLikes[item.response_id] ?? 0) + 1; if (item.user_id === currentUserId) likedComments.add(item.response_id); });
     (replyLikesResult.data ?? []).forEach((item) => { replyLikes[item.reply_id] = (replyLikes[item.reply_id] ?? 0) + 1; if (item.user_id === currentUserId) likedReplies.add(item.reply_id); });
     setPost({ ...rawPost, profiles: profiles.get(rawPost.author_id) ?? null, isVerified: Boolean(verificationResult.data) } as Post); setLikeCount(likeResult.count ?? 0); setLiked(Boolean(myLikeResult.data)); setSaved(Boolean(savedResult.data));
