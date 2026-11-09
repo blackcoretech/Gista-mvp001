@@ -1160,9 +1160,11 @@ main.content {
 }
 
 /* Keep display names and @usernames equally dark in comment and reply headers. */
-.comments-section .comment-head .comment-display-name,
-.comments-section .comment-head .comment-meta .comment-username {
+.comments-section .comment-head .comment-display-name {
   color: #292333 !important;
+}
+.comments-section .comment-head .comment-meta .comment-username {
+  color: #9a96a1 !important;
 }
 .comments-section .comment-head .comment-display-name {
   font-size: 15px !important;
