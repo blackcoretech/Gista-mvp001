@@ -1116,3 +1116,11 @@ main.content {
 .signup-steps span{display:inline-flex;align-items:center;gap:5px}
 .signup-steps b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#f1eaff;color:#6d28d9;font-size:10px}
 .signup-steps i{font-style:normal;color:#c4bdcf}
+
+
+/* People Joined highlight in the landing-page phone mock-up. */
+.landing-people-joined{display:flex;align-items:center;gap:9px;margin:10px 12px 12px;padding:9px 11px;border:1px solid #eee8f8;border-radius:12px;background:#faf8ff}
+.landing-joined-icon{display:grid;place-items:center;width:29px;height:29px;flex:0 0 29px;border-radius:9px;background:#eee6ff;color:#6d28d9;font-size:17px}
+.landing-people-joined strong,.landing-people-joined small{display:block}
+.landing-people-joined strong{color:#292333;font-size:10px;font-weight:800}
+.landing-people-joined small{margin-top:2px;color:#8a8494;font-size:8px}
