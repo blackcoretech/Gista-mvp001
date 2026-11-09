@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <p><strong>Version:</strong> 0.1 (draft)<br/><strong>Effective date:</strong> To be set before publication.</p>
       <p>Gista is a social platform for sharing text, photographs and voice posts and taking part in conversations. This policy explains the personal information Gista may process, why it is used, and the choices available to users.</p>
       <h3>1. Who operates Gista?</h3>
-      <p>Gista is currently operated by its founder as an individual under the Gista brand. Black Core Technologies is the project/brand affiliation and is not represented here as a separate registered legal entity. The operator&apos;s full legal name and a dedicated privacy contact must be added before this policy is made effective.</p>
+      <p><strong>Data controller / operator:</strong> Solomon Kelechi Enyinnaya, operating Gista as an individual under the Gista brand.</p><p><strong>Brand affiliation:</strong> Black Core Technologies (project/brand affiliation; not represented here as a separate registered legal entity).</p>
       <h3>2. Information that may be processed</h3>
       <ul>
         <li><strong>Account details:</strong> email address and authentication information used to create and secure an account.</li>
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
       <h3>11. Changes</h3>
       <p>This policy may be updated as Gista changes. Material changes will be communicated and renewed consent will be requested where required by law.</p>
       <h3>12. Contact</h3>
-      <p>For privacy questions or requests, use the <Link href="/help" style={{color:"#6d28d9",fontWeight:700}}>Gista Help Center</Link>. Before this policy becomes effective, Gista must add the operator&apos;s full legal name and a dedicated privacy contact method.</p>
+      <p>For privacy questions, data requests or complaints, contact the Gista operator:</p><ul><li><strong>Name:</strong> Solomon Kelechi Enyinnaya</li><li><strong>Email:</strong> solomonenyinnaya14@gmail.com</li><li><strong>Telephone:</strong> 09131196685</li></ul><p>You may also submit a request through the <Link href="/help" style={{color:"#6d28d9",fontWeight:700}}>Gista Help Center</Link>.</p>
       <p><strong>Legal note:</strong> This is a working product draft, not a legal certification or a statement that all compliance requirements have been met. It must be reconciled with Gista&apos;s actual production data flows and applicable law before public use.</p>
       <p><Link href="/terms" style={{color:"#6d28d9",fontWeight:750}}>Read Gista&apos;s Terms of Service →</Link></p>
     </section>
