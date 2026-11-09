@@ -1159,7 +1159,15 @@ main.content {
   font-weight: 750;
 }
 
-/* Improve only the @username contrast in comment and reply headers. */
+/* Keep display names and @usernames equally dark in comment and reply headers. */
+.comments-section .comment-head .comment-display-name,
+.comments-section .comment-head .comment-meta .comment-username {
+  color: #292333 !important;
+}
+.comments-section .comment-head .comment-display-name {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
 .comments-section .comment-head .comment-meta {
   display: inline-flex;
   flex-direction: row;
@@ -1168,7 +1176,6 @@ main.content {
   gap: 0;
 }
 .comments-section .comment-head .comment-meta .comment-username {
-  color: #292333 !important;
   font-size: 12px !important;
   font-weight: 700 !important;
 }
