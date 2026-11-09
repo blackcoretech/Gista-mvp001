@@ -241,7 +241,6 @@ export default function PublicProfile() {
               {post.content_type === "photo" && post.media_url && <img src={post.media_url} alt="Post" style={{ width: "100%", borderRadius: 16, marginTop: 10 }} />}
             </Link>
             {post.content_type === "voice" && post.media_url && <div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds} /></div>}
-            {post.status && <div className="gist-status"><span className={post.status === "trending" ? "hot" : "dot"}>{post.status === "trending" ? "🔥" : "●"}</span>{post.status.charAt(0).toUpperCase() + post.status.slice(1)}</div>}
             <div className="actions">
               <button type="button" className={post.liked ? "liked" : ""} onClick={() => void toggleLike(post)} disabled={busy === post.id + "l"} aria-label="Like Post"><Heart size={18} fill={post.liked ? "currentColor" : "none"} /> {post.likes}</button>
               <Link className="feed-action-link" href={"/post/" + post.id + "?comments=1"} aria-label="Comments"><MessageCircle size={18} /> {post.responses}</Link>
