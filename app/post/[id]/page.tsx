@@ -52,6 +52,7 @@ export default function PostPage() {
     ]);
     if (sequence !== commentLoadSequence.current) return;
     const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile as Profile]));
+    const verifiedAuthorIds = new Set((commentVerificationResult.data ?? []).map((item) => item.profile_id));
     const commentLikes: Record<string, number> = {}; const replyLikes: Record<string, number> = {}; const likedComments = new Set<string>(); const likedReplies = new Set<string>();
     (commentLikesResult.data ?? []).forEach((item) => { commentLikes[item.response_id] = (commentLikes[item.response_id] ?? 0) + 1; if (item.user_id === currentUserId) likedComments.add(item.response_id); });
     (replyLikesResult.data ?? []).forEach((item) => { replyLikes[item.reply_id] = (replyLikes[item.reply_id] ?? 0) + 1; if (item.user_id === currentUserId) likedReplies.add(item.reply_id); });
