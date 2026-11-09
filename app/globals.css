@@ -1160,25 +1160,23 @@ main.content {
   font-weight: 750;
 }
 
-/* Keep the approved purple rosette verification mark consistent across cards. */
 .verified-badge {
-  display: inline-flex !important;
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important;
-  flex: 0 0 18px !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-left: 4px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  clip-path: polygon(50% 0%,61% 8%,75% 4%,83% 17%,96% 25%,92% 39%,100% 50%,92% 61%,96% 75%,83% 83%,75% 96%,61% 92%,50% 100%,39% 92%,25% 96%,17% 83%,4% 75%,8% 61%,0% 50%,8% 39%,4% 25%,17% 17%,25% 4%,39% 8%) !important;
-  background: #7138e8 !important;
-  color: #fff !important;
-  font-size: 11px !important;
-  font-weight: 900 !important;
-  line-height: 18px !important;
-  text-align: center !important;
-  vertical-align: middle !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  min-width: 13px;
+  margin: 0 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #6D28D9;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 13px;
+  text-align: center;
+  vertical-align: middle;
+  flex: 0 0 13px;
 }
