@@ -7,7 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import VoiceNote from "@/components/VoiceNote";
 
-const categories = ["Music","Movies / Entertainment","Art","Banter","Fun","Gossip","Sports","Relationships","Business","Technology","Education","Lifestyle","Society","News & Current Events","Opinions","Stories"];
+const categories = ["Music","Art","Banter","Fun","Gossip","Sports","Movies / Entertainment","Relationships","Business"];
 type Profile = { display_name: string | null; username: string | null; avatar_url: string | null };
 
 async function compressPhoto(file: File): Promise<File> {
