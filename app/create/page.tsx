@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, ImagePlus, Type, Square, Circle, RotateCcw } from "lucide-react";
+import { Mic, ImagePlus, Type, Square } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import VoiceNote from "@/components/VoiceNote";
