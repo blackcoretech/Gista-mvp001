@@ -9,8 +9,7 @@ export default function PrivacyPage() {
       <p><strong>Version:</strong> 0.1 (draft)<br/><strong>Effective date:</strong> To be set before publication.</p>
       <p>Gista is a social platform for sharing text, photographs and voice posts and taking part in conversations. This policy explains the personal information Gista may process, why it is used, and the choices available to users.</p>
       <h3>1. Who operates Gista?</h3>
-      <p><strong>Data controller / operator:</strong> Solomon Kelechi Enyinnaya, operating Gista as an individual under the Gista brand.</p><p><strong>Brand affiliation:</strong> Black Core Technologies (project/brand affiliation; not represented here as a separate registered legal entity).</p>
-      <h3>2. Information that may be processed</h3>
+      <p><strong>Data controller / operator:</strong> Solomon Kelechi Enyinnaya, operating Gista as an individual under the Gista brand.</p><h3>2. Information that may be processed</h3>
       <ul>
         <li><strong>Account details:</strong> email address and authentication information used to create and secure an account.</li>
         <li><strong>Profile details:</strong> username, display name, profile photograph, biography and other details a user chooses to add.</li>
