@@ -32,7 +32,7 @@ export default function TermsPage() {
       <h3>11. Governing law</h3>
       <p>These Terms are intended to be governed by the laws of the Federal Republic of Nigeria, subject to mandatory legal protections and the jurisdiction of competent courts.</p>
       <h3>12. Contact</h3>
-      <p>For questions or complaints, use the <Link href="/help" style={{color:"#6d28d9",fontWeight:700}}>Gista Help Center</Link>. The operator&apos;s full legal name and dedicated contact details must be added before these Terms become effective.</p>
+      <p>Gista is operated by Solomon Kelechi Enyinnaya as an individual under the Gista brand. Black Core Technologies is the project/brand affiliation and is not represented here as a separate registered legal entity.</p><p>For questions or complaints, contact:</p><ul><li><strong>Email:</strong> solomonenyinnaya14@gmail.com</li><li><strong>Telephone:</strong> 09131196685</li></ul><p>You may also use the <Link href="/help" style={{color:"#6d28d9",fontWeight:700}}>Gista Help Center</Link>.</p>
       <p><strong>Legal note:</strong> This is a working draft, not legal advice or a guarantee of compliance. It must be reviewed against Gista&apos;s final product rules and applicable law before public use.</p>
       <p><Link href="/privacy" style={{color:"#6d28d9",fontWeight:750}}>Read Gista&apos;s Privacy Policy →</Link></p>
     </section>
