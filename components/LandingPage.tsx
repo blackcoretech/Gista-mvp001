@@ -42,7 +42,11 @@ function MockConversation() {
           <div className="landing-feed-tabs">
             <span className="active">Discover</span>
             <span>Following</span>
-            <span>Trending</span>
+          </div>
+
+          <div className="landing-people-joined">
+            <span className="landing-joined-icon">✦</span>
+            <span><strong>People Joined</strong><small>Be part of the conversation</small></span>
           </div>
 
           <div className="landing-post">
@@ -66,11 +70,6 @@ function MockConversation() {
               <span><Bookmark size={16} /></span>
             </div>
 
-            <div className="landing-status">
-              <span className="landing-status-dot" />
-              Growing
-              <span>Post DNA</span>
-            </div>
           </div>
 
           <div className="landing-response">
@@ -193,6 +192,20 @@ export default function LandingPage() {
         </div>
 
         <MockConversation />
+      </section>
+
+
+      <section className="landing-how">
+        <div className="landing-how-heading">
+          <span className="landing-how-kicker">HOW GISTA WORKS</span>
+          <h2>One thought can start a whole conversation.</h2>
+          <p>Gista makes it easy to share what is on your mind and find people who want to talk about it.</p>
+        </div>
+        <div className="landing-how-grid">
+          <article><span>01</span><strong>Share what is on your mind</strong><p>Start with a text, a photo, or your voice.</p></article>
+          <article><span>02</span><strong>Join the conversation</strong><p>Respond with your thoughts, or add a voice comment.</p></article>
+          <article><span>03</span><strong>Discover more people</strong><p>Explore posts and find conversations that interest you.</p></article>
+        </div>
       </section>
 
       <section className="landing-explainer">
