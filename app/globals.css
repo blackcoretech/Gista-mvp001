@@ -1159,3 +1159,21 @@ main.content {
   font-weight: 750;
 }
 
+/* Improve only the @username contrast in comment and reply headers. */
+.comments-section .comment-head .comment-meta {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.comments-section .comment-head .comment-meta .comment-username {
+  color: #292333 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+.comments-section .comment-head .comment-meta .comment-timestamp {
+  color: #8a8494 !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
