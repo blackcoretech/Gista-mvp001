@@ -44,6 +44,11 @@ function MockConversation() {
             <span>Following</span>
           </div>
 
+          <div className="landing-people-joined">
+            <span className="landing-joined-icon">✦</span>
+            <span><strong>People Joined</strong><small>Be part of the conversation</small></span>
+          </div>
+
           <div className="landing-post">
             <div className="landing-post-head">
               <span className="landing-avatar landing-avatar-one">T</span>
