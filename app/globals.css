@@ -1141,3 +1141,44 @@ main.content {
 .voice-comment-recorder .voice-record-main{min-height:48px}
 .verified-badge{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:4px;flex:0 0 auto;clip-path:polygon(50% 0%,61% 8%,75% 4%,83% 17%,96% 25%,92% 39%,100% 50%,92% 61%,96% 75%,83% 83%,75% 96%,61% 92%,50% 100%,39% 92%,25% 96%,17% 83%,4% 75%,8% 61%,0% 50%,8% 39%,4% 25%,17% 17%,25% 4%,39% 8%);background:#7138e8;color:#fff;font-size:11px;font-weight:900;line-height:1;vertical-align:middle}
 @keyframes gista-record-pulse{50%{opacity:.45;transform:scale(.86)}}
+
+
+/* Voice preview actions: make it easy to discard and re-record before publishing. */
+.voice-discard-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border: 1px solid #f0caca;
+  border-radius: 10px;
+  background: #fff7f7;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+/* Keep the approved purple rosette verification mark consistent across cards. */
+.verified-badge {
+  display: inline-flex !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  flex: 0 0 18px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 4px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  clip-path: polygon(50% 0%,61% 8%,75% 4%,83% 17%,96% 25%,92% 39%,100% 50%,92% 61%,96% 75%,83% 83%,75% 96%,61% 92%,50% 100%,39% 92%,25% 96%,17% 83%,4% 75%,8% 61%,0% 50%,8% 39%,4% 25%,17% 17%,25% 4%,39% 8%) !important;
+  background: #7138e8 !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  line-height: 18px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
