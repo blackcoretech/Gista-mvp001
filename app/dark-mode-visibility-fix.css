@@ -1,0 +1,68 @@
+/* Final dark-mode text contrast overrides.
+   Imported last in RootLayout so component-level defaults cannot override these rules.
+   Scope is limited to the Gista wordmark, profile identity/header, and comment identities/content. */
+
+html[data-theme="dark"] .topbar .brand,
+html[data-theme="dark"] .topbar .brand > span:last-child,
+html[data-theme="dark"] .topbar .brand-name {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-header > strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-identity-copy,
+html[data-theme="dark"] .profile-identity-copy h1,
+html[data-theme="dark"] .profile-identity-copy h1 *,
+html[data-theme="dark"] .profile-identity-copy .profile-username,
+html[data-theme="dark"] .profile-identity-copy .profile-bio,
+html[data-theme="dark"] .profile-identity-copy a,
+html[data-theme="dark"] .profile-page .profile-gist .identity,
+html[data-theme="dark"] .profile-page .profile-gist .identity a,
+html[data-theme="dark"] .profile-page .profile-gist .identity strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-identity-copy .profile-username,
+html[data-theme="dark"] .profile-identity-copy .profile-bio,
+html[data-theme="dark"] .profile-page .profile-gist .identity > span {
+  color: #c4bdce !important;
+  -webkit-text-fill-color: #c4bdce !important;
+}
+
+html[data-theme="dark"] .comments-section .comment-head,
+html[data-theme="dark"] .comments-section .comment-head > div,
+html[data-theme="dark"] .comments-section .comment-head > div > span,
+html[data-theme="dark"] .comments-section .comment-display-name,
+html[data-theme="dark"] .comments-section .comment-username,
+html[data-theme="dark"] .comments-section .comment > p,
+html[data-theme="dark"] .comments-section .reply,
+html[data-theme="dark"] .comments-section .reply *,
+html[data-theme="dark"] .comments-section .comment-actions {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .comments-section .comment-meta,
+html[data-theme="dark"] .comments-section .comment-timestamp {
+  color: #c4bdce !important;
+  -webkit-text-fill-color: #c4bdce !important;
+}
+
+/* Keep verification ticks and Gista purple accents intact. */
+html[data-theme="dark"] .comments-section .verified-badge,
+html[data-theme="dark"] .profile-identity-copy .verified-badge {
+  -webkit-text-fill-color: #ffffff !important;
+}
