@@ -86,3 +86,20 @@ html[data-theme="dark"] .profile-header > strong {
   visibility: visible !important;
 }
 
+
+
+/* Admin settings header: darken only the Back to Profile navigation control. */
+html[data-theme="dark"] .settings-header a[href*="profile"],
+html[data-theme="dark"] .settings-header button[aria-label*="profile" i],
+html[data-theme="dark"] .settings-header a[aria-label*="profile" i] {
+  background-color: #17151c !important;
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .settings-header a[href*="profile"] *,
+html[data-theme="dark"] .settings-header button[aria-label*="profile" i] *,
+html[data-theme="dark"] .settings-header a[aria-label*="profile" i] * {
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+}
