@@ -66,3 +66,23 @@ html[data-theme="dark"] .comments-section .verified-badge,
 html[data-theme="dark"] .profile-identity-copy .verified-badge {
   -webkit-text-fill-color: #ffffff !important;
 }
+
+/* Match the top navigation surfaces to the dark settings/profile surfaces.
+   This also gives the Gista wordmark and Profile title a consistently dark
+   background instead of relying on text color alone. */
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .profile-header {
+  background-color: #17151c !important;
+  color: #ffffff !important;
+  border-color: #2b2732 !important;
+}
+
+html[data-theme="dark"] .topbar .brand,
+html[data-theme="dark"] .topbar .brand *,
+html[data-theme="dark"] .profile-header > strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
