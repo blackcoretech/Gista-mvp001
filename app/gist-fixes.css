@@ -148,3 +148,24 @@ html[data-theme="dark"] .gist-joined-avatar{border-color:#17151c;background:#302
 .joined-follow-button:disabled{opacity:.6}
 .joined-sheet-state{padding:22px 4px;text-align:center;color:var(--muted,#888);font-size:13px}
 html[data-theme="dark"] .joined-person-avatar{background:#30243f;color:#d8b4fe}
+
+
+/* Keep the View People participant sheet on the dark surface in dark mode. */
+html[data-theme="dark"] .joined-sheet {
+  background: #17151c !important;
+  color: #f7f5fa !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .joined-sheet-header {
+  border-bottom-color: #2b2732 !important;
+}
+html[data-theme="dark"] .joined-sheet-header h2,
+html[data-theme="dark"] .joined-person-copy strong,
+html[data-theme="dark"] .joined-person-profile {
+  color: #f7f5fa !important;
+}
+html[data-theme="dark"] .joined-sheet-close,
+html[data-theme="dark"] .joined-follow-button.is-following {
+  background: #302b38 !important;
+  color: #f7f5fa !important;
+}
