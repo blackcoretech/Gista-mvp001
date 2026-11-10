@@ -1,0 +1,137 @@
+/* Final dark-mode text contrast overrides.
+   Imported last in RootLayout so component-level defaults cannot override these rules.
+   Scope is limited to the Gista wordmark, profile identity/header, and comment identities/content. */
+
+html[data-theme="dark"] .topbar .brand,
+html[data-theme="dark"] .topbar .brand > span:last-child,
+html[data-theme="dark"] .topbar .brand-name {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-header > strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-identity-copy,
+html[data-theme="dark"] .profile-identity-copy h1,
+html[data-theme="dark"] .profile-identity-copy h1 *,
+html[data-theme="dark"] .profile-identity-copy .profile-username,
+html[data-theme="dark"] .profile-identity-copy .profile-bio,
+html[data-theme="dark"] .profile-identity-copy a,
+html[data-theme="dark"] .profile-page .profile-gist .identity,
+html[data-theme="dark"] .profile-page .profile-gist .identity a,
+html[data-theme="dark"] .profile-page .profile-gist .identity strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .profile-identity-copy .profile-username,
+html[data-theme="dark"] .profile-identity-copy .profile-bio,
+html[data-theme="dark"] .profile-page .profile-gist .identity > span {
+  color: #c4bdce !important;
+  -webkit-text-fill-color: #c4bdce !important;
+}
+
+html[data-theme="dark"] .comments-section .comment-head,
+html[data-theme="dark"] .comments-section .comment-head > div,
+html[data-theme="dark"] .comments-section .comment-head > div > span,
+html[data-theme="dark"] .comments-section .comment-display-name,
+html[data-theme="dark"] .comments-section .comment-username,
+html[data-theme="dark"] .comments-section .comment > p,
+html[data-theme="dark"] .comments-section .reply,
+html[data-theme="dark"] .comments-section .reply *,
+html[data-theme="dark"] .comments-section .comment-actions {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-theme="dark"] .comments-section .comment-meta,
+html[data-theme="dark"] .comments-section .comment-timestamp {
+  color: #c4bdce !important;
+  -webkit-text-fill-color: #c4bdce !important;
+}
+
+/* Keep verification ticks and Gista purple accents intact. */
+html[data-theme="dark"] .comments-section .verified-badge,
+html[data-theme="dark"] .profile-identity-copy .verified-badge {
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Match the top navigation surfaces to the dark settings/profile surfaces.
+   This also gives the Gista wordmark and Profile title a consistently dark
+   background instead of relying on text color alone. */
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .profile-header {
+  background-color: #17151c !important;
+  color: #ffffff !important;
+  border-color: #2b2732 !important;
+}
+
+html[data-theme="dark"] .topbar .brand,
+html[data-theme="dark"] .topbar .brand *,
+html[data-theme="dark"] .profile-header > strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+
+/* Admin settings header: darken only the Back to Profile navigation control. */
+html[data-theme="dark"] .settings-header a[href*="profile"],
+html[data-theme="dark"] .settings-header button[aria-label*="profile" i],
+html[data-theme="dark"] .settings-header a[aria-label*="profile" i] {
+  background-color: #17151c !important;
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .settings-header a[href*="profile"] *,
+html[data-theme="dark"] .settings-header button[aria-label*="profile" i] *,
+html[data-theme="dark"] .settings-header a[aria-label*="profile" i] * {
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+}
+
+
+/* Match the entire admin Settings header bar to the Gista top navigation bar. */
+html[data-theme="dark"] .settings-header {
+  background-color: #17151c !important;
+  color: #ffffff !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .settings-header *,
+html[data-theme="dark"] .settings-header a,
+html[data-theme="dark"] .settings-header button {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+
+/* Discover / Following feed tabs: match the Home feed dark surface. */
+html[data-theme="dark"] .feed-tabs {
+  background-color: #17151c !important;
+  color: #f7f5fa !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .feed-tabs .tab {
+  background-color: transparent !important;
+  color: #aaa4b1 !important;
+}
+html[data-theme="dark"] .feed-tabs .tab.active {
+  color: #c4b5fd !important;
+}
+html[data-theme="dark"] .feed-tabs .tab.active:after {
+  background-color: #8b5cf6 !important;
+}

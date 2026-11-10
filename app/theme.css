@@ -265,3 +265,52 @@ html[data-theme="dark"] .profile-gist-content .gist-status span,
 html[data-theme="dark"] .profile-gist-content .gist-status a {
   color: #aaa4b1;
 }
+
+
+/* Targeted dark-mode identity/readability fixes: brand, comments, and profiles. */
+html[data-theme="dark"] .brand,
+html[data-theme="dark"] .brand > span:not(.brand-icon),
+html[data-theme="dark"] .brand-name {
+  color:#f7f5fa !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+html[data-theme="dark"] .comment,
+html[data-theme="dark"] .reply {
+  color:#f7f5fa !important;
+}
+
+html[data-theme="dark"] .comment-head > div,
+html[data-theme="dark"] .comment-head > div > span,
+html[data-theme="dark"] .comment-display-name,
+html[data-theme="dark"] .comment-username,
+html[data-theme="dark"] .comment p,
+html[data-theme="dark"] .reply p {
+  color:#f7f5fa !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+html[data-theme="dark"] .comment-meta,
+html[data-theme="dark"] .comment-timestamp {
+  color:#aaa4b1 !important;
+}
+
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy,
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy h1,
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-username,
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-bio,
+html[data-theme="dark"] .profile-hero h1,
+html[data-theme="dark"] .profile-header strong,
+html[data-theme="dark"] .profile-stat-item strong,
+html[data-theme="dark"] .profile-stat-item span {
+  color:#f7f5fa !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-username,
+html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-bio {
+  color:#aaa4b1 !important;
+}
