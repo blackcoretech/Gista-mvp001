@@ -117,3 +117,21 @@ html[data-theme="dark"] .settings-header button {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
+
+
+/* Discover / Following feed tabs: match the Home feed dark surface. */
+html[data-theme="dark"] .feed-tabs {
+  background-color: #17151c !important;
+  color: #f7f5fa !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .feed-tabs .tab {
+  background-color: transparent !important;
+  color: #aaa4b1 !important;
+}
+html[data-theme="dark"] .feed-tabs .tab.active {
+  color: #c4b5fd !important;
+}
+html[data-theme="dark"] .feed-tabs .tab.active:after {
+  background-color: #8b5cf6 !important;
+}
