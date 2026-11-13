@@ -23,6 +23,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try { var savedTheme = localStorage.getItem("gista-theme"); if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") { var resolvedTheme = savedTheme === "dark" ? "dark" : "light"; document.documentElement.dataset.theme = resolvedTheme; document.documentElement.style.colorScheme = resolvedTheme; } } catch (e) {}`,
+          }}
+        />
+      </head>
       <body>
         <ThemeProvider>
           <VerifiedBadgeInjector />
