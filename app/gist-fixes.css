@@ -169,3 +169,24 @@ html[data-theme="dark"] .joined-follow-button.is-following {
   background: #302b38 !important;
   color: #f7f5fa !important;
 }
+
+/* Profile section tabs: use dark surfaces for Posts, Comments and Saved Posts. */
+html[data-theme="dark"] .profile-page .profile-content {
+  background: #17151c !important;
+  border-color: #2b2732 !important;
+}
+html[data-theme="dark"] .profile-page .profile-tabs {
+  background: #17151c !important;
+  border-color: #2b2732 !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] .profile-page .profile-tabs button {
+  background: #211b2b !important;
+  color: #d8d1e2 !important;
+  border-color: #30283b !important;
+}
+html[data-theme="dark"] .profile-page .profile-tabs button.active {
+  background: #5b21b6 !important;
+  color: #ffffff !important;
+  border-color: #5b21b6 !important;
+}

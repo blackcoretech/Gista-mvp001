@@ -72,7 +72,7 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
   return <>
     <button type="button" className="gist-joined gist-joined-trigger" onClick={() => setOpen(true)} aria-label={"View " + joinedCount + " people who joined this conversation"}>
       <span className="gist-joined-avatars">{visiblePreview.map((person) => <span className="gist-joined-avatar" key={person.id} title={person.display_name ?? person.username ?? "Participant"}>{person.avatar_url ? <img src={person.avatar_url} alt="" loading="lazy" /> : (person.display_name?.[0] ?? person.username?.[0] ?? "G").toUpperCase()}</span>)}</span>
-      <span className="gist-joined-count">{joinedCount.toLocaleString()} joined</span>
+      <span className="gist-joined-count">{joinedCount.toLocaleString()} joined the conversation</span>
       <span className="gist-joined-hint">View people</span>
     </button>
     {open && <div className="joined-sheet-backdrop" onClick={() => setOpen(false)}>

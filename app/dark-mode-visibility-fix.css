@@ -135,3 +135,44 @@ html[data-theme="dark"] .feed-tabs .tab.active {
 html[data-theme="dark"] .feed-tabs .tab.active:after {
   background-color: #8b5cf6 !important;
 }
+
+/* Voice posts and voice comments: remove light/white player surfaces in dark mode. */
+html[data-theme="dark"] .voice-note,
+html[data-theme="dark"] .voice-player,
+html[data-theme="dark"] .voice-preview-panel,
+html[data-theme="dark"] .voice-comment-recorder,
+html[data-theme="dark"] .voice-comment-recorder .voice-preview-panel {
+  background: #211b2b !important;
+  border-color: #3a2d4d !important;
+  color: #f7f5fa !important;
+  color-scheme: dark;
+}
+html[data-theme="dark"] .voice-note .voice-track,
+html[data-theme="dark"] .voice-note .voice-track-wrap {
+  background: transparent !important;
+}
+html[data-theme="dark"] .voice-note .voice-bar {
+  background: #b9a3e8 !important;
+}
+html[data-theme="dark"] .voice-note .voice-bar.played,
+html[data-theme="dark"] .voice-note .voice-track.is-playing .voice-bar.played {
+  background: #8b5cf6 !important;
+}
+html[data-theme="dark"] .voice-note .voice-time,
+html[data-theme="dark"] .voice-preview-label,
+html[data-theme="dark"] .voice-recorder-hint,
+html[data-theme="dark"] .voice-transcript p,
+html[data-theme="dark"] .voice-transcript .transcript-status {
+  color: #c4bdce !important;
+  -webkit-text-fill-color: #c4bdce !important;
+}
+html[data-theme="dark"] .voice-player audio,
+html[data-theme="dark"] .profile-gist audio {
+  color-scheme: dark;
+  background: #211b2b !important;
+  border-radius: 10px;
+}
+html[data-theme="dark"] .voice-record,
+html[data-theme="dark"] .voice-record-main {
+  color: #c4b5fd !important;
+}
