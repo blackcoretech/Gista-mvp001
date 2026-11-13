@@ -24,8 +24,16 @@ function storageKey(userId: string | null) {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Gista's default/system appearance is intentionally Light.
-  const [theme, setThemeState] = useState<Theme>("light");
+  // Read the last selected theme synchronously so a refresh does not first paint Light.
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
+    try {
+      const saved = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      return isTheme(saved) ? saved : "light";
+    } catch {
+      return "light";
+    }
+  });
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [userId, setUserId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
@@ -43,16 +51,16 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
           const saved = window.localStorage.getItem(ANONYMOUS_STORAGE_KEY);
           if (isTheme(saved)) anonymousTheme = saved;
           else {
-            // Migrate the old device-only preference for signed-out visitors.
             const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
             if (isTheme(legacy)) anonymousTheme = legacy;
           }
+          window.localStorage.setItem(LEGACY_STORAGE_KEY, anonymousTheme);
         } catch {}
         if (active) setThemeState(anonymousTheme);
         return;
       }
 
-      // A per-account local cache makes the chosen theme available immediately.
+      // Account cache is applied immediately while the canonical profile value loads.
       let cachedTheme: Theme | null = null;
       try {
         const cached = window.localStorage.getItem(storageKey(nextUserId));
@@ -60,7 +68,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       } catch {}
       if (cachedTheme && active) setThemeState(cachedTheme);
 
-      // The account's database preference is canonical and follows them to other devices.
       const { data, error } = await supabase
         .from("profiles")
         .select("theme_preference")
@@ -73,6 +80,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       setThemeState(finalTheme);
       try {
         window.localStorage.setItem(storageKey(nextUserId), finalTheme);
+        window.localStorage.setItem(LEGACY_STORAGE_KEY, finalTheme);
       } catch {}
     }
 
@@ -81,7 +89,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Defer database access until Supabase has released its auth-state lock.
       window.setTimeout(() => void loadUserTheme(session?.user.id ?? null), 0);
     });
 
@@ -92,7 +99,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [supabase]);
 
   useEffect(() => {
-    // System Default is intentionally Light for Gista, regardless of device appearance.
     const next = theme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = next;
     document.documentElement.style.colorScheme = next;
@@ -100,16 +106,21 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
+    // Update immediately, then persist both the fast local cache and account preference.
     setThemeState(next);
     try {
       window.localStorage.setItem(storageKey(userId), next);
+      window.localStorage.setItem(LEGACY_STORAGE_KEY, next);
     } catch {}
 
     if (userId) {
       void supabase
         .from("profiles")
         .update({ theme_preference: next })
-        .eq("id", userId);
+        .eq("id", userId)
+        .then(({ error }) => {
+          if (error) console.error("Unable to save Gista theme preference:", error.message);
+        });
     }
   }, [supabase, userId]);
 
