@@ -189,3 +189,24 @@ html[data-theme="dark"] .profile-page .profile-identity-row .profile-edit-pill {
 html[data-theme="dark"] .profile-page .profile-identity-row .profile-edit-pill:active {
   background: #2b2238 !important;
 }
+
+
+/* Keep reply text in the same author column, directly below the name and handle. */
+.comments-section .reply { display: block !important; }
+.comments-section .reply-content { display: flex !important; flex-direction: column !important; align-items: stretch !important; min-width: 0 !important; width: 100% !important; }
+.comments-section .reply-content .comment-head { display: flex !important; align-items: center !important; }
+.comments-section .reply-content > p { display: block !important; margin: 6px 0 4px 0 !important; padding: 0 !important; text-align: left !important; white-space: pre-wrap !important; overflow-wrap: anywhere !important; }
+.comments-section .reply-content > .voice-note { margin: 8px 0 4px !important; }
+.comments-section .reply-content > .comment-actions { margin: 6px 0 0 !important; }
+
+/* Dark-mode Edit profile control should use the profile's dark surface. */
+html[data-theme="dark"] .profile-page .profile-edit-pill {
+  background-color: #211b2b !important;
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+  border: 1px solid #3a2d4d !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] .profile-page .profile-edit-pill:active {
+  background-color: #2b2238 !important;
+}
