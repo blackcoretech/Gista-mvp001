@@ -118,6 +118,8 @@ export default function HomePage(){
     const card = document.querySelector<HTMLElement>(`[data-feed-post-id="${saved.postId}"]`);
     if (!card) return;
     let cancelled = false;
+    let settleTimer: number | undefined;
+    let finalTimer: number | undefined;
     const restore = () => {
       if (cancelled) return;
       const currentCard = document.querySelector<HTMLElement>(`[data-feed-post-id="${saved.postId}"]`);
@@ -128,13 +130,17 @@ export default function HomePage(){
     // Restore after the feed has rendered, then compensate for late image/font layout.
     const first = window.requestAnimationFrame(() => {
       restore();
-      window.setTimeout(restore, 120);
-      window.setTimeout(restore, 420);
+      settleTimer = window.setTimeout(restore, 120);
+      finalTimer = window.setTimeout(() => {
+        restore();
+        try { window.sessionStorage.removeItem(FEED_RETURN_POSITION_KEY); } catch {}
+      }, 420);
     });
-    try { window.sessionStorage.removeItem(FEED_RETURN_POSITION_KEY); } catch {}
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(first);
+      if (settleTimer !== undefined) window.clearTimeout(settleTimer);
+      if (finalTimer !== undefined) window.clearTimeout(finalTimer);
     };
   }, [user, loading, posts.length, tab]);
 
