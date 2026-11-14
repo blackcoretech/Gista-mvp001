@@ -40,6 +40,11 @@ export default function PostPage() {
     const rawPost = postResult.data as Omit<Post, "profiles">;
     const rawComments = (commentsResult.data ?? []) as Array<Omit<Comment, "profiles" | "replies" | "likes" | "liked"> & { replies: Array<Omit<Reply, "profiles" | "likes" | "liked">> }>;
     if (commentsResult.error) setError(commentsResult.error.message);
+    // Show the post and comment text as soon as the first data batch arrives.
+    // Profile names, verification badges, and like states are enriched immediately afterward.
+    setPost({ ...rawPost, profiles: null, isVerified: false } as Post);
+    setComments(rawComments.map((item) => ({ ...item, profiles: null, isVerified: false, likes: 0, liked: false, replies: (item.replies ?? []).map((reply) => ({ ...reply, profiles: null, isVerified: false, likes: 0, liked: false })) })) as Comment[]);
+    setLoading(false);
     const commentIds = rawComments.map((item) => item.id); const replyIds = rawComments.flatMap((item) => (item.replies ?? []).map((reply) => reply.id));
     const authorIds = [rawPost.author_id, ...rawComments.map((item) => item.author_id), ...rawComments.flatMap((item) => (item.replies ?? []).map((reply) => reply.author_id))]; const uniqueAuthorIds = [...new Set(authorIds)];
     const [profilesResult, commentLikesResult, replyLikesResult, myLikeResult, verificationResult, commentVerificationResult] = await Promise.all([
