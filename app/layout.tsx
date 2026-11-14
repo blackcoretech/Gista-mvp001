@@ -10,6 +10,7 @@ import "./action-theme-fixes.css";
 import "./performance-fixes.css";
 import "./formal-architecture.css";
 import "./dark-mode-visibility-fix.css";
+import "./post-modal.css";
 import VerifiedBadgeInjector from "@/components/VerifiedBadgeInjector";
 import ThemeProvider from "@/components/ThemeProvider";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   description: "Where people talk, share, connect, and belong. Every Post Starts a Conversation.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AnalyticsTracker />
           <FeedSessionTracker />
           {children}
+          {modal}
         </ThemeProvider>
       </body>
     </html>

@@ -176,3 +176,90 @@ html[data-theme="dark"] .voice-record,
 html[data-theme="dark"] .voice-record-main {
   color: #c4b5fd !important;
 }
+
+
+/* Combined PR: dark comment/reply composers and voice controls. */
+html[data-theme="dark"] .comments-section .comment-composer,
+html[data-theme="dark"] .comments-section .reply-composer,
+html[data-theme="dark"] .comments-section .voice-recorder-card,
+html[data-theme="dark"] .comments-section .voice-comment-recorder,
+html[data-theme="dark"] .comments-section .voice-preview-panel,
+html[data-theme="dark"] .comments-section .voice-note,
+html[data-theme="dark"] .comments-section .voice-player {
+  background:#17151c !important;
+  color:#f7f5fa !important;
+  border-color:#2b2732 !important;
+}
+html[data-theme="dark"] .comments-section .voice-recorder-card,
+html[data-theme="dark"] .comments-section .voice-comment-recorder,
+html[data-theme="dark"] .comments-section .voice-preview-panel {
+  background:#211b2b !important;
+  border-color:#3a2d4d !important;
+}
+html[data-theme="dark"] .comments-section .comment-composer textarea,
+html[data-theme="dark"] .comments-section .reply-composer textarea {
+  background:#111015 !important;
+  color:#f7f5fa !important;
+  border-color:#39333f !important;
+}
+html[data-theme="dark"] .comments-section .voice-recorder-heading,
+html[data-theme="dark"] .comments-section .voice-recorder-heading span,
+html[data-theme="dark"] .comments-section .voice-preview-label,
+html[data-theme="dark"] .comments-section .voice-discard-button {
+  color:#d8d1e2 !important;
+}
+
+/* Replies: keep the author identity together, then place the reply below it. */
+.comments-section .replies-list .reply {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+}
+.comments-section .replies-list .reply > .comment-head {
+  width:100%;
+  display:flex;
+  align-items:center;
+}
+.comments-section .replies-list .reply > p,
+.comments-section .replies-list .reply > .voice-player,
+.comments-section .replies-list .reply > .voice-note {
+  display:block;
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  margin:9px 0 0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.comments-section .replies-list .reply > .comment-actions {
+  width:100%;
+  margin-top:9px;
+}
+
+/* Edit Profile: actual page root is .profile-page. */
+html[data-theme="dark"] .profile-page .profile-editor {
+  background:#17151c !important;
+  color:#f7f5fa !important;
+  border:1px solid #2b2732 !important;
+}
+html[data-theme="dark"] .profile-page .profile-editor .editor-heading,
+html[data-theme="dark"] .profile-page .profile-editor label {
+  color:#f7f5fa !important;
+}
+html[data-theme="dark"] .profile-page .profile-editor input,
+html[data-theme="dark"] .profile-page .profile-editor textarea,
+html[data-theme="dark"] .profile-page .profile-editor .username-input,
+html[data-theme="dark"] .profile-page .profile-editor .username-input input {
+  background:#111015 !important;
+  color:#f7f5fa !important;
+  border-color:#39333f !important;
+}
+html[data-theme="dark"] .profile-page .profile-editor .username-input span,
+html[data-theme="dark"] .profile-page .profile-editor small,
+html[data-theme="dark"] .profile-page .profile-editor .editor-heading p {
+  color:#aaa4b1 !important;
+}
+html[data-theme="dark"] .profile-page .profile-editor .profile-save {
+  color:#fff !important;
+}
