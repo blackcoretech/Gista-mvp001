@@ -1186,3 +1186,35 @@ main.content {
   font-size: 12px !important;
   font-weight: 400 !important;
 }
+
+
+/* Replies should stack beneath the reply author's identity, not beside it. */
+.comments-list .replies-list .reply {
+  display: block !important;
+  min-width: 0;
+}
+.comments-list .replies-list .reply > .comment-head {
+  display: flex;
+  align-items: center;
+}
+.comments-list .replies-list .reply > p,
+.comments-list .replies-list .reply > .voice-player,
+.comments-list .replies-list .reply > .voice-note {
+  display: block;
+  margin-left: 42px !important;
+  max-width: calc(100% - 42px);
+}
+.comments-list .replies-list .reply > .comment-actions {
+  margin-left: 42px !important;
+}
+
+
+/* Ensure liked reply hearts render purple, including the filled icon and count. */
+.comments-section .comment-actions button.reply-like.liked,
+.comments-section .comment-actions button.reply-like.liked svg,
+.comments-section .comment-actions button.reply-like.liked svg path,
+.comments-section .comment-actions button.reply-like.liked .like-count {
+  color: #7c3aed !important;
+  fill: #7c3aed !important;
+  stroke: #7c3aed !important;
+}
