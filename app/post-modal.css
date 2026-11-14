@@ -3,3 +3,5 @@
 .gista-post-modal-panel .app-shell{min-height:100%;padding-bottom:24px}
 .gista-post-modal-panel .simple-header{position:sticky;top:0;z-index:20}
 @media(max-width:720px){.gista-post-modal-layer{background:var(--gista-page-bg,#f7f7fb)}.gista-post-modal-panel{width:100%;box-shadow:none}}
+
+html[data-theme="dark"] .gista-post-modal-panel{background:#0f0d12}
