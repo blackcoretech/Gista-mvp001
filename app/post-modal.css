@@ -1,0 +1,7 @@
+.gista-post-modal-layer{position:fixed;inset:0;z-index:1000;display:flex;justify-content:center;background:rgba(16,14,22,.48);overscroll-behavior:contain}
+.gista-post-modal-panel{width:min(100%,720px);height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--gista-page-bg,#f7f7fb);box-shadow:0 0 36px rgba(0,0,0,.16);-webkit-overflow-scrolling:touch}
+.gista-post-modal-panel .app-shell{min-height:100%;padding-bottom:24px}
+.gista-post-modal-panel .simple-header{position:sticky;top:0;z-index:20}
+@media(max-width:720px){.gista-post-modal-layer{background:var(--gista-page-bg,#f7f7fb)}.gista-post-modal-panel{width:100%;box-shadow:none}}
+
+html[data-theme="dark"] .gista-post-modal-panel{background:#0f0d12}
