@@ -1207,3 +1207,14 @@ main.content {
 .comments-list .replies-list .reply > .comment-actions {
   margin-left: 42px !important;
 }
+
+
+/* Ensure liked reply hearts render purple, including the filled icon and count. */
+.comments-section .comment-actions button.reply-like.liked,
+.comments-section .comment-actions button.reply-like.liked svg,
+.comments-section .comment-actions button.reply-like.liked svg path,
+.comments-section .comment-actions button.reply-like.liked .like-count {
+  color: #7c3aed !important;
+  fill: #7c3aed !important;
+  stroke: #7c3aed !important;
+}
