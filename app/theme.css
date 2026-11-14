@@ -314,3 +314,41 @@ html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-use
 html[data-theme="dark"] .public-profile-hero .profile-identity-copy .profile-bio {
   color:#aaa4b1 !important;
 }
+
+
+/* Notification read state: unread items remain visibly distinct until opened. */
+.notification-item {
+  position:relative;
+  transition:background-color .15s ease,border-color .15s ease;
+}
+.notification-item.unread {
+  background:#f5f0ff;
+  border-left:3px solid #7c3aed;
+  padding-left:11px;
+}
+.notification-item.unread::after {
+  content:"";
+  position:absolute;
+  top:50%;
+  right:16px;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#7c3aed;
+  transform:translateY(-50%);
+}
+.notification-item:not(.unread) {
+  background:#fff;
+  border-left:3px solid transparent;
+}
+html[data-theme="dark"] .notification-item.unread {
+  background:#211b2b !important;
+  border-left-color:#a78bfa !important;
+}
+html[data-theme="dark"] .notification-item.unread::after {
+  background:#a78bfa;
+}
+html[data-theme="dark"] .notification-item:not(.unread) {
+  background:#17151c !important;
+  border-left-color:transparent;
+}
