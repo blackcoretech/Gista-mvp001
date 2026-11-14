@@ -64,6 +64,37 @@ async function attachJoinedParticipants(supabase: ReturnType<typeof createClient
 const inMemoryFeedSnapshots = new Map<string, Post[]>();
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
 const ACTIVE_FEED_USER_KEY="gista:active-feed-user";
+const FEED_RETURN_POSITION_KEY = "gista:feed-return-position";
+
+type FeedReturnPosition = { postId: string; scrollY: number; cardTop: number; tab: string };
+
+function rememberFeedPosition(postId: string, tab: string) {
+  try {
+    const card = document.querySelector<HTMLElement>(`[data-feed-post-id="${postId}"]`);
+    const position: FeedReturnPosition = {
+      postId,
+      scrollY: window.scrollY,
+      cardTop: card?.getBoundingClientRect().top ?? 0,
+      tab,
+    };
+    window.sessionStorage.setItem(FEED_RETURN_POSITION_KEY, JSON.stringify(position));
+  } catch {
+    // Scroll restoration is an enhancement; navigation should still work if storage is unavailable.
+  }
+}
+
+function readFeedReturnPosition(): FeedReturnPosition | null {
+  try {
+    const raw = window.sessionStorage.getItem(FEED_RETURN_POSITION_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<FeedReturnPosition>;
+    if (typeof value.postId !== "string" || typeof value.scrollY !== "number" || typeof value.cardTop !== "number") return null;
+    return { postId: value.postId, scrollY: value.scrollY, cardTop: value.cardTop, tab: typeof value.tab === "string" ? value.tab : "Discover" };
+  } catch {
+    return null;
+  }
+}
+
 // Remember which document has already consumed its initial hard-reload refresh.
 // Next.js route navigation can remount Home while the document navigation type
 // remains "reload"; without this guard each remount fetches a newly ranked feed.
@@ -78,6 +109,35 @@ export default function HomePage(){
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
   const loadProfile=useCallback(async(u:{id:string}|null)=>{if(!u){setProfile(null);return}const cached=readCachedProfile(u.id);if(cached)setProfile(cached);const{data}=await supabase.from("profiles").select("id,display_name,username,avatar_url").eq("id",u.id).maybeSingle();if(data){const next=data as Profile;setProfile(next);writeCachedProfile(next)}},[supabase]);
   const loadPosts=useCallback(async(u:{id:string}|null,force=false)=>{const requestId=++feedRequestId.current;setFeedError("");if(!u){setPosts([]);setLoading(false);initialLoadDone.current=true;return}const snapshotKey=`${u.id}:${tab}`;const memoryPosts=inMemoryFeedSnapshots.get(snapshotKey);const shouldForceRefresh=force&&!(memoryPosts&&memoryPosts.length>0);if(tab!=="Following"&&!shouldForceRefresh&&memoryPosts&&memoryPosts.length>0){const hydrated=await attachJoinedParticipants(supabase,memoryPosts);setPosts(hydrated);postsRef.current=hydrated;inMemoryFeedSnapshots.set(snapshotKey,hydrated);writeFeedCache(browserStorage(),u.id,tab,hydrated);setLoading(false);initialLoadDone.current=true;loadedFeedKey.current=snapshotKey;return;}const cachedPosts=readFeedCache<Post>(browserStorage(),u.id,tab,Date.now(),feedCacheMaxAge);if(tab!=="Following"&&cachedPosts&&cachedPosts.length>0&&!force){const hydrated=await attachJoinedParticipants(supabase,cachedPosts);setPosts(hydrated);postsRef.current=hydrated;inMemoryFeedSnapshots.set(snapshotKey,hydrated);writeFeedCache(browserStorage(),u.id,tab,hydrated);setLoading(false);initialLoadDone.current=true;loadedFeedKey.current=`${u.id}:${tab}`;return;}if(!cachedPosts||cachedPosts.length===0||shouldForceRefresh){setPosts([]);postsRef.current=[];setLoading(true)}const previousFirstPostId=postsRef.current[0]?.id??(shouldForceRefresh?cachedPosts?.[0]?.id:undefined);const loadFeed=async(seed?:number)=>shouldForceRefresh?supabase.rpc("get_fast_home_feed_refresh",{p_tab:tab,p_limit:tab==="Following"?20:50,p_offset:0,p_refresh_seed:seed??(Date.now()+Math.floor(Math.random()*1_000_000_000))}):supabase.rpc("get_fast_home_feed",{p_tab:tab,p_limit:tab==="Following"?20:50,p_offset:0});let{data,error}=await loadFeed();if(error&&/jwt|token|session|issued at future/i.test(error.message)){const refresh=await supabase.auth.refreshSession();if(!refresh.error)({data,error}=await loadFeed())}if(shouldForceRefresh&&!error&&previousFirstPostId&&(data??[]).length>0&&(data??[])[0].id===previousFirstPostId){for(let attempt=0;attempt<2&&!error&&(data??[]).length>0&&(data??[])[0].id===previousFirstPostId;attempt++){const retry=await loadFeed(Date.now()+Math.floor(Math.random()*1_000_000_000)+attempt+1);if(!retry.error&&(retry.data??[]).length>0){data=retry.data;error=null}else if(retry.error){error=retry.error}}}if(requestId!==feedRequestId.current)return;if(error){setFeedError(/jwt|token|session|issued at future/i.test(error.message)?"Your session needs to be refreshed. Please try again.":error.message);setLoading(false);return}if((data??[]).length===0){const refreshed=await supabase.auth.refreshSession();if(!refreshed.error&&refreshed.data.session?.user?.id===u.id){const recovered=await loadFeed();if(!recovered.error&&(recovered.data??[]).length>0){data=recovered.data;error=null}}for(let attempt=0;attempt<2&&(data??[]).length===0;attempt++){await new Promise(resolve=>window.setTimeout(resolve,350));if(requestId!==feedRequestId.current)return;const retry=await loadFeed();if(!retry.error&&(retry.data??[]).length>0){data=retry.data;error=null;break}if(retry.error){error=retry.error;break}}if(error){setFeedError(error.message);setLoading(false);return}}const rawRows=((data??[]) as FeedRow[]).filter(r=>tab!=="Following"||r.author_id!==u.id);const basePosts=rawRows.map(r=>({...r,profiles:{id:r.author_id,display_name:r.display_name,username:r.username,avatar_url:r.avatar_url},likes:Number(r.likes)||0,responses:Number(r.responses)||0,shares:Number(r.shares)||0,saves:Number(r.saves)||0,participants:[],participantCount:0}));const nextPosts=await attachJoinedParticipants(supabase,basePosts);setPosts(nextPosts);postsRef.current=nextPosts;if(nextPosts.length>0){inMemoryFeedSnapshots.set(`${u.id}:${tab}`,nextPosts);cacheCurrentPosts(nextPosts,u.id);}else if(!readFeedCache<Post>(browserStorage(),u.id,tab,Date.now(),feedCacheMaxAge))cacheCurrentPosts(nextPosts,u.id);setLoading(false);initialLoadDone.current=true;loadedFeedKey.current=`${u.id}:${tab}`},[supabase,tab]);
+  // X-style feed return: restore the exact Post card at the same viewport position
+  // after the Post detail route unmounts Home and the user navigates back.
+  useEffect(() => {
+    if (!user || loading || posts.length === 0) return;
+    const saved = readFeedReturnPosition();
+    if (!saved || (saved.tab && saved.tab !== tab)) return;
+    const card = document.querySelector<HTMLElement>(`[data-feed-post-id="${saved.postId}"]`);
+    if (!card) return;
+    let cancelled = false;
+    const restore = () => {
+      if (cancelled) return;
+      const currentCard = document.querySelector<HTMLElement>(`[data-feed-post-id="${saved.postId}"]`);
+      if (!currentCard) return;
+      const delta = currentCard.getBoundingClientRect().top - saved.cardTop;
+      if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
+    };
+    // Restore after the feed has rendered, then compensate for late image/font layout.
+    const first = window.requestAnimationFrame(() => {
+      restore();
+      window.setTimeout(restore, 120);
+      window.setTimeout(restore, 420);
+    });
+    try { window.sessionStorage.removeItem(FEED_RETURN_POSITION_KEY); } catch {}
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(first);
+    };
+  }, [user, loading, posts.length, tab]);
+
   // A successful publish hands Home the exact inserted row. Merge it into the
   // existing Discover snapshot without refetching or changing the order of older posts.
   useEffect(()=>{if(!user||tab!=="Discover"||loading)return;let raw:string|null=null;try{raw=window.sessionStorage.getItem("gista:pending-created-post")}catch{}if(!raw)return;try{const pending=JSON.parse(raw) as {userId?:string;post?:FeedRow};if(pending.userId!==user.id||!pending.post?.id)return;const row=pending.post;const created:Post={...row,profiles:{id:row.author_id,display_name:row.display_name,username:row.username,avatar_url:row.avatar_url},likes:Number(row.likes)||0,responses:Number(row.responses)||0,shares:Number(row.shares)||0,saves:Number(row.saves)||0,participants:[],participantCount:0};setPosts(current=>{const next=[created,...current.filter(post=>post.id!==created.id)];postsRef.current=next;inMemoryFeedSnapshots.set(`${user.id}:Discover`,next);writeFeedCache(browserStorage(),user.id,"Discover",next);return next});window.sessionStorage.removeItem("gista:pending-created-post")}catch{try{window.sessionStorage.removeItem("gista:pending-created-post")}catch{}}},[user,tab,loading]);
@@ -148,7 +208,7 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
       <div className="feed-tabs">{["Discover","Following"].map(x=><button key={x} className={tab===x?"tab active":"tab"} onClick={()=>{if(x!==tab){setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(x)}}}>{x}</button>)}</div>
       <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><Link className="composer-input" href="/create">What&apos;s on your mind?</Link><Link className="create-btn" aria-label="Create Post" href="/create"><Plus size={19}/></Link></div>
       <div className="feed">
-        {loading&&posts.length===0?<div className="feed-skeleton"><div className="skeleton-post"/><div className="skeleton-post"/></div>:feedError&&posts.length===0?<div className="empty-state"><h3>We couldn&apos;t load the Posts</h3><p>{feedError}</p><button className="primary small" onClick={()=>void loadPosts(user)}>Try again</button></div>:posts.length===0?<div className="empty-state"><h3>No Posts yet</h3><p>{tab==="Following"?"Follow people to see their Posts here.":"Be the first person to create a Post."}</p></div>:posts.map((p,i)=><article className="profile-gist" key={p.id}>
+        {loading&&posts.length===0?<div className="feed-skeleton"><div className="skeleton-post"/><div className="skeleton-post"/></div>:feedError&&posts.length===0?<div className="empty-state"><h3>We couldn&apos;t load the Posts</h3><p>{feedError}</p><button className="primary small" onClick={()=>void loadPosts(user)}>Try again</button></div>:posts.length===0?<div className="empty-state"><h3>No Posts yet</h3><p>{tab==="Following"?"Follow people to see their Posts here.":"Be the first person to create a Post."}</p></div>:posts.map((p,i)=><article className="profile-gist" key={p.id} data-feed-post-id={p.id} onClick={(event)=>{const link=(event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/post/"]');if(link)rememberFeedPosition(p.id,tab)}}>
           <div className="post-head"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"} className="avatar">{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" loading={i<6?"eager":"lazy"} fetchPriority={i<3?"high":"auto"} decoding="async" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:p.profiles?.display_name?.[0]?.toUpperCase()||"G"}</Link><div className="identity"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"}><strong>{p.profiles?.display_name??"Gista User"}</strong></Link><span>@{p.profiles?.username??"user"} · {new Date(p.created_at).toLocaleString()}</span></div><span className="category">{p.category}</span></div>
           <Link className="profile-gist-content" href={"/post/"+p.id}>{p.body&&<p>{p.body}</p>} {p.content_type==="photo"&&p.media_url&&<img className="gist-media" src={p.media_url} alt="Post" loading={i===0?"eager":"lazy"}/>}</Link>
           {p.content_type==="voice"&&p.media_url&&<div className="profile-gist-voice"><VoicePlayer src={p.media_url}/></div>}
