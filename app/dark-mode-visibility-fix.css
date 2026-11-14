@@ -176,3 +176,16 @@ html[data-theme="dark"] .voice-record,
 html[data-theme="dark"] .voice-record-main {
   color: #c4b5fd !important;
 }
+
+
+/* The Edit profile control must follow the selected dark theme. */
+html[data-theme="dark"] .profile-page .profile-identity-row .profile-edit-pill {
+  background: #211b2b !important;
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+  border: 1px solid #3a2d4d !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] .profile-page .profile-identity-row .profile-edit-pill:active {
+  background: #2b2238 !important;
+}
