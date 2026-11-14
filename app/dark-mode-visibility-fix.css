@@ -210,3 +210,58 @@ html[data-theme="dark"] .profile-page .profile-edit-pill {
 html[data-theme="dark"] .profile-page .profile-edit-pill:active {
   background-color: #2b2238 !important;
 }
+
+
+/* Dark-mode comment entry surfaces: match the dark page instead of white cards. */
+html[data-theme="dark"] .comments-section .comment-composer,
+html[data-theme="dark"] .comments-section .reply-composer,
+html[data-theme="dark"] .comments-section .voice-comment-recorder,
+html[data-theme="dark"] .comments-section .voice-preview-panel {
+  background: #211b2b !important;
+  background-color: #211b2b !important;
+  border-color: #3a2d4d !important;
+  color: #f7f5fa !important;
+  color-scheme: dark;
+}
+html[data-theme="dark"] .comments-section .comment-composer textarea,
+html[data-theme="dark"] .comments-section .reply-composer textarea {
+  background: transparent !important;
+  color: #f7f5fa !important;
+  -webkit-text-fill-color: #f7f5fa !important;
+  caret-color: #c4b5fd !important;
+}
+html[data-theme="dark"] .comments-section .comment-composer textarea::placeholder,
+html[data-theme="dark"] .comments-section .reply-composer textarea::placeholder {
+  color: #a99fb7 !important;
+  -webkit-text-fill-color: #a99fb7 !important;
+  opacity: 1 !important;
+}
+html[data-theme="dark"] .comments-section .voice-recorder-heading,
+html[data-theme="dark"] .comments-section .voice-recorder-live,
+html[data-theme="dark"] .comments-section .voice-preview-label {
+  color: #f0eafa !important;
+  -webkit-text-fill-color: #f0eafa !important;
+}
+html[data-theme="dark"] .comments-section .comment-composer-actions {
+  border-color: #3a2d4d !important;
+}
+html[data-theme="dark"] .comments-section .reply-composer .comment-composer-actions {
+  border-color: #3a2d4d !important;
+}
+
+/* Liked reply heart and count stay purple in both themes, including SVG paths. */
+html[data-theme="dark"] .comments-section .reply-like.liked,
+html[data-theme="dark"] .comments-section .reply-like.liked svg,
+html[data-theme="dark"] .comments-section .reply-like.liked svg path,
+html[data-theme="light"] .comments-section .reply-like.liked,
+html[data-theme="light"] .comments-section .reply-like.liked svg,
+html[data-theme="light"] .comments-section .reply-like.liked svg path {
+  color: #7c3aed !important;
+  fill: #7c3aed !important;
+  stroke: #7c3aed !important;
+}
+html[data-theme="dark"] .comments-section .reply-like.liked .like-count,
+html[data-theme="light"] .comments-section .reply-like.liked .like-count {
+  color: #7c3aed !important;
+  -webkit-text-fill-color: #7c3aed !important;
+}
