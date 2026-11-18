@@ -11,7 +11,7 @@ import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
 type Profile = { id: string; display_name: string | null; username: string | null; avatar_url: string | null };
 type Reply = { id: string; body: string | null; content_type: string; media_url: string | null; voice_duration_seconds: number | null; created_at: string; author_id: string; profiles: Profile | null; isVerified?: boolean; accountBadge?: "team" | "business" | null; likes: number; liked: boolean };
-type Comment = { id: string; body: string | null; content_type: string; media_url: string | null; voice_duration_seconds: number | null; created_at: string; author_id: string; profiles: Profile | null; isVerified?: boolean; replies: Reply[]; likes: number; liked: boolean };
+type Comment = { id: string; body: string | null; content_type: string; media_url: string | null; voice_duration_seconds: number | null; created_at: string; author_id: string; profiles: Profile | null; isVerified?: boolean; accountBadge?: "team" | "business" | null; replies: Reply[]; likes: number; liked: boolean };
 type Post = { id: string; author_id: string; body: string | null; content_type: string; media_url: string | null; voice_duration_seconds: number | null; category: string; status: string | null; created_at: string; profiles: Profile | null; isVerified?: boolean; accountBadge?: "team" | "business" | null };
 
 function Avatar({ profile }: { profile: Profile | null }) { return <div className="avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="avatar-image" /> : profile?.display_name?.[0]?.toUpperCase() ?? "G"}</div>; }
