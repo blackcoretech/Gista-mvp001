@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isVerified, setIsVerified] = useState(false);
+  const [accountBadge, setAccountBadge] = useState<"team" | "business" | null>(null);
   const [edit, setEdit] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -75,8 +76,12 @@ export default function ProfilePage() {
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) {
       writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? "");
-      const { data: verification, error: verificationError } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle();
+      const [{ data: verification, error: verificationError }, { data: badge, error: badgeError }] = await Promise.all([
+        supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle(),
+        supabase.from("account_badges").select("badge_type").eq("user_id", user.id).maybeSingle(),
+      ]);
       if (!verificationError) setIsVerified(!!verification);
+      if (!badgeError) setAccountBadge(badge?.badge_type === "team" || badge?.badge_type === "business" ? badge.badge_type : null);
     } else { setIsVerified(false); }
     setComments((userCommentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
@@ -261,7 +266,7 @@ export default function ProfilePage() {
       <section className="profile-hero profile-hero-with-cover">
         <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
         <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
-        <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
+        <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}{accountBadge === "team" && <span title="Gista Team" aria-label="Gista Team" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginLeft:6,color:"#7c3aed",fontSize:20,verticalAlign:"middle"}}>★</span>}{accountBadge === "business" && <span title="Verified Business" aria-label="Verified Business" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginLeft:6,color:"#7c3aed",fontSize:18,verticalAlign:"middle"}}>◆</span>}{isVerified && <span title="Verified account" aria-label="Verified account" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,marginLeft:5,borderRadius:"50%",background:"#7c3aed",color:"#fff",fontSize:10,fontWeight:900,verticalAlign:"middle"}}>✓</span>}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
         <div className="profile-stats profile-stats-two"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
