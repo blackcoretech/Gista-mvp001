@@ -52,7 +52,8 @@ export default function ProfilePage() {
     const user = session?.user ?? null;
     if (!user) { router.replace("/auth"); return; }
     const cachedProfile = readCachedProfile(user.id);
-    if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
+    // Do not reveal the display name from cache before its badge has loaded.
+    // Identity and verification are committed together below after Promise.all.
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
     const [profileResult, statsResult, initialPostsResult, userCommentsResult, verificationResult, badgeResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
