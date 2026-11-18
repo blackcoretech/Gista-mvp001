@@ -54,11 +54,13 @@ export default function ProfilePage() {
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
-    const [profileResult, statsResult, initialPostsResult, userCommentsResult] = await Promise.all([
+    const [profileResult, statsResult, initialPostsResult, userCommentsResult, verificationResult, badgeResult] = await Promise.all([
       supabase.from("profiles").select(PROFILE_SELECT).eq("id", user.id).maybeSingle(),
       supabase.rpc("get_profile_stats", { target_profile_id: user.id }),
       supabase.from("posts").select("id,content_type,body,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", user.id).order("created_at", { ascending: false }).limit(30),
       supabase.from("responses").select("id,body,content_type,created_at,post_id,posts!inner(id,body,created_at)").eq("author_id", user.id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).eq("verification_type", "official").maybeSingle(),
+      supabase.from("account_badges").select("badge_type").eq("user_id", user.id).maybeSingle(),
     ]);
     let postsResult = initialPostsResult;
     // Profile queries can race the first authenticated request after navigation.
@@ -76,12 +78,8 @@ export default function ProfilePage() {
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) {
       writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? "");
-      const [{ data: verification, error: verificationError }, { data: badge, error: badgeError }] = await Promise.all([
-        supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).eq("verification_type", "official").maybeSingle(),
-        supabase.from("account_badges").select("badge_type").eq("user_id", user.id).maybeSingle(),
-      ]);
-      if (!verificationError) setIsVerified(!!verification);
-      if (!badgeError) setAccountBadge(badge?.badge_type === "team" || badge?.badge_type === "business" ? badge.badge_type : null);
+      if (!verificationResult.error) setIsVerified(!!verificationResult.data);
+      if (!badgeResult.error) setAccountBadge(badgeResult.data?.badge_type === "team" || badgeResult.data?.badge_type === "business" ? badgeResult.data.badge_type : null);
     } else { setIsVerified(false); }
     setComments((userCommentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
