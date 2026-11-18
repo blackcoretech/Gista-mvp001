@@ -43,7 +43,6 @@ export default function PublicProfile() {
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [following, setFollowing] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [accountBadge, setAccountBadge] = useState<"team" | "business" | null>(null);
   const [counts, setCounts] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<PublicPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +54,7 @@ export default function PublicProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     setMe(user ? { id: user.id } : null);
     const { data, error } = await supabase.from("profiles").select("id,username,display_name,bio,avatar_url,cover_url,is_private,following_private").eq("username", username).single();
-    if (error || !data) { setProfile(null); setIsVerified(false); setAccountBadge(null); setLoading(false); return; }
+    if (error || !data) { setProfile(null); setIsVerified(false); setLoading(false); return; }
     if (user?.id === data.id) { router.replace("/profile"); return; }
     const [followState, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
       user ? supabase.from("follows").select("follower_id").eq("follower_id", user.id).eq("following_id", data.id).maybeSingle() : Promise.resolve({ data: null }),
@@ -70,13 +69,10 @@ export default function PublicProfile() {
       const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
-    const [{ data: verification }, { data: badge }] = await Promise.all([
-      supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle(),
-      supabase.from("account_badges").select("badge_type").eq("user_id", data.id).maybeSingle(),
-    ]);
+    const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
-    setProfile(data as Profile); setIsVerified(!!verification); setAccountBadge(badge?.badge_type === "team" || badge?.badge_type === "business" ? badge.badge_type : null); setFollowing(isFollowing);
+    setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
     const rpcPostCount = Number(profileStats?.posts ?? profileStats?.gists ?? 0);
     // Use the strongest available count so an RLS-filtered zero from the posts
     // list cannot mask the aggregate count for a public profile.
@@ -219,7 +215,7 @@ export default function PublicProfile() {
           {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
         <div className="profile-identity-copy">
-          <h1>{profile.display_name ?? "Gista User"}{accountBadge === "team" && <span title="Gista Team" aria-label="Gista Team" style={{ display:"inline-flex",alignItems:"center",justifyContent:"center",width:14,height:14,marginLeft:5,borderRadius:"50%",background:"#7c3aed",color:"#fff",fontSize:8,fontWeight:900 }}>★</span>}{accountBadge === "business" && <span title="Verified Business" aria-label="Verified Business" style={{ display:"inline-flex",alignItems:"center",justifyContent:"center",width:14,height:14,marginLeft:5,borderRadius:"50%",background:"#7c3aed",color:"#fff",fontSize:8,fontWeight:900 }}>◆</span>}{!accountBadge && isVerified && <VerifiedBadge />}</h1>
+          <h1>{profile.display_name ?? "Gista User"}{isVerified && <VerifiedBadge />}</h1>
           <p className="profile-username">@{profile.username}</p>
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         </div>
@@ -237,7 +233,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{accountBadge === "team" && <span title="Gista Team" aria-label="Gista Team" style={{display:"inline-flex",flex:"0 0 13px",alignItems:"center",justifyContent:"center",width:13,height:13,marginLeft:4,borderRadius:"50%",background:"#7c3aed",color:"#fff",fontSize:8,fontWeight:900,lineHeight:1}}>★</span>}{accountBadge === "business" && <span title="Verified Business" aria-label="Verified Business" style={{display:"inline-flex",flex:"0 0 13px",alignItems:"center",justifyContent:"center",width:13,height:13,marginLeft:4,borderRadius:"50%",background:"#7c3aed",color:"#fff",fontSize:8,fontWeight:900,lineHeight:1}}>◆</span>}{!accountBadge && isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>
