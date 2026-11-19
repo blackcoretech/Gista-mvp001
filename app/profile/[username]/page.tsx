@@ -18,6 +18,9 @@ type Profile = {
   is_private: boolean;
 };
 
+function formatRelativeTime(value:string){const created=new Date(value),diff=Math.max(0,Date.now()-created.getTime());const minutes=Math.floor(diff/60000);if(minutes<1)return "Just now";if(minutes<60)return minutes+"m ago";const hours=Math.floor(diff/3600000);if(hours<24)return hours+"h ago";const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(created.toDateString()===yesterday.toDateString())return "Yesterday";return created.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
+
+
 type PublicPost = {
   id: string;
   body: string | null;
@@ -233,7 +236,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {new Date(post.created_at).toLocaleString()}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {formatRelativeTime(post.created_at)}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>
