@@ -19,6 +19,20 @@ function formatRelativeTime(value:string){const created=new Date(value),diff=Mat
 type SavedProfilePost = { id: string; body: string | null; content_type: string; media_url: string | null; category: string; created_at: string; voice_duration_seconds: number | null };
 const PROFILE_SELECT = "id,username,display_name,bio,avatar_url,cover_url";
 
+type OwnProfileSnapshot = { profile: Profile; stats: { posts: number; followers: number; following: number }; posts: Post[]; comments: MyComment[]; savedAt: number };
+const OWN_PROFILE_SNAPSHOT_PREFIX = "gista-own-profile-snapshot:";
+function readOwnProfileSnapshot(userId: string): OwnProfileSnapshot | null {
+  try {
+    const raw = window.localStorage.getItem(OWN_PROFILE_SNAPSHOT_PREFIX + userId);
+    if (!raw) return null;
+    const snapshot = JSON.parse(raw) as OwnProfileSnapshot;
+    return snapshot && snapshot.profile && Array.isArray(snapshot.posts) && Array.isArray(snapshot.comments) ? snapshot : null;
+  } catch { return null; }
+}
+function writeOwnProfileSnapshot(userId: string, snapshot: Omit<OwnProfileSnapshot, "savedAt">) {
+  try { window.localStorage.setItem(OWN_PROFILE_SNAPSHOT_PREFIX + userId, JSON.stringify({ ...snapshot, savedAt: Date.now() })); } catch {}
+}
+
 const PROFILE_CACHE_PREFIX="gista-profile-cache:";
 function readCachedProfile(userId:string):Profile|null{try{const raw=window.localStorage.getItem(PROFILE_CACHE_PREFIX+userId);return raw?JSON.parse(raw) as Profile:null}catch{return null}}
 function writeCachedProfile(profile:Profile){try{window.localStorage.setItem(PROFILE_CACHE_PREFIX+profile.id,JSON.stringify(profile))}catch{}}
@@ -52,6 +66,17 @@ export default function ProfilePage() {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user ?? null;
     if (!user) { router.replace("/auth"); return; }
+    const cachedSnapshot = readOwnProfileSnapshot(user.id);
+    if (cachedSnapshot) {
+      setProfile(cachedSnapshot.profile);
+      setDisplayName(cachedSnapshot.profile.display_name ?? "");
+      setUsername(cachedSnapshot.profile.username ?? "");
+      setBio(cachedSnapshot.profile.bio ?? "");
+      setStats(cachedSnapshot.stats);
+      setPosts(cachedSnapshot.posts);
+      setComments(cachedSnapshot.comments);
+      setLoading(false);
+    }
     const cachedProfile = readCachedProfile(user.id);
     if (cachedProfile) { setProfile(cachedProfile); setDisplayName(cachedProfile.display_name ?? ""); setUsername(cachedProfile.username ?? ""); setBio(cachedProfile.bio ?? ""); }
     const fallbackName = user.email?.split("@")[0] ?? "Gista User";
@@ -89,7 +114,17 @@ export default function ProfilePage() {
     setStats({ posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) });
     const rawPosts = (postsResult.data ?? []) as Array<Omit<Post, "likes" | "comments" | "saves" | "shares" | "liked" | "saved">>;
     const ids = rawPosts.map((post) => post.id);
-    if (!ids.length) { setPosts([]); setLoading(false); return; }
+    if (!ids.length) {
+      setPosts([]);
+      writeOwnProfileSnapshot(user.id, {
+        profile: (data ?? { id: user.id, username: null, display_name: fallbackName, bio: "", avatar_url: null, cover_url: null }) as Profile,
+        stats: { posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) },
+        posts: [],
+        comments: (userCommentsResult.data ?? []) as unknown as MyComment[],
+      });
+      setLoading(false);
+      return;
+    }
     setPosts(rawPosts.map((post) => ({ ...post, likes: 0, comments: 0, saves: 0, shares: 0, liked: false, saved: false })));
     setLoading(false);
     const [likesResult, commentsResult, savesResult, engagementResult] = await Promise.all([
@@ -108,7 +143,14 @@ export default function ProfilePage() {
     (engagementResult.data ?? []).forEach((row: { post_id: string; share_count: number | string }) => { shareCounts[row.post_id] = Number(row.share_count) || 0; });
     const liked = new Set((likesResult.data ?? []).filter((row: { user_id: string }) => row.user_id === user.id).map((row: { post_id: string }) => row.post_id));
     const saved = new Set((savesResult.data ?? []).filter((row: { user_id: string }) => row.user_id === user.id).map((row: { post_id: string }) => row.post_id));
-    setPosts(rawPosts.map((post) => ({ ...post, likes: likeCounts[post.id] ?? 0, comments: commentCounts[post.id] ?? 0, saves: saveCounts[post.id] ?? 0, shares: shareCounts[post.id] ?? 0, liked: liked.has(post.id), saved: saved.has(post.id) })));
+    const enrichedPosts = rawPosts.map((post) => ({ ...post, likes: likeCounts[post.id] ?? 0, comments: commentCounts[post.id] ?? 0, saves: saveCounts[post.id] ?? 0, shares: shareCounts[post.id] ?? 0, liked: liked.has(post.id), saved: saved.has(post.id) }));
+    setPosts(enrichedPosts);
+    if (data) writeOwnProfileSnapshot(user.id, {
+      profile: data,
+      stats: { posts: visiblePostCount, followers: Number(rawStats?.followers ?? 0), following: Number(rawStats?.following ?? 0) },
+      posts: enrichedPosts,
+      comments: (userCommentsResult.data ?? []) as unknown as MyComment[],
+    });
   }
 
   async function loadSavedPosts() {
