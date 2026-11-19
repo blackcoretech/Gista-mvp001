@@ -7,6 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import VoicePlayer from "@/components/voice-player";
 import BottomNav from "@/components/BottomNav";
+import CreateSheet from "@/components/CreateSheet";
 import JoinedParticipants from "@/components/JoinedParticipants";
 import LandingPage from "@/components/LandingPage";
 import { LONG_AWAY_REFRESH_PENDING_KEY, LONG_AWAY_REFRESH_EVENT, LAST_HIDDEN_AT_KEY, LONG_AWAY_REFRESH_THRESHOLD_MS } from "@/lib/feed-session";
@@ -16,6 +17,8 @@ import { FEED_CACHE_MAX_AGE_MS, browserStorage, clearFeedCache, feedCacheKey, re
 type Profile={id:string;display_name:string|null;username:string|null;avatar_url:string|null};
 type FeedRow={id:string;body:string|null;content_type:string;media_url:string|null;category:string;status:string|null;created_at:string;author_id:string;voice_duration_seconds:number|null;display_name:string|null;username:string|null;avatar_url:string|null;likes:number|string;responses:number|string;shares:number|string;saves:number|string;liked:boolean;saved:boolean};
 type Post=FeedRow&{profiles:Profile|null;likes:number;responses:number;shares:number;saves:number;participants:Profile[];participantCount:number};
+
+function formatRelativeTime(value:string){const created=new Date(value),diff=Math.max(0,Date.now()-created.getTime());const minutes=Math.floor(diff/60000);if(minutes<1)return "Just now";if(minutes<60)return minutes+"m ago";const hours=Math.floor(diff/3600000);if(hours<24)return hours+"h ago";const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(created.toDateString()===yesterday.toDateString())return "Yesterday";return created.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
 
 async function attachJoinedParticipants(supabase: ReturnType<typeof createClient>, posts: Post[]): Promise<Post[]> {
   if (!posts.length) return posts;
@@ -73,7 +76,8 @@ function writeCachedProfile(profile:Profile){try{const raw=window.localStorage.g
 
 export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
-  const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
+  const[tab,setTab]=useState("Discover"),[createSheetOpen,setCreateSheetOpen]=useState(false),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
+  useEffect(()=>{if(typeof window!=="undefined"&&new URLSearchParams(window.location.search).get("create")==="1"){setCreateSheetOpen(true);window.history.replaceState({}, "", "/");}},[]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
   const loadProfile=useCallback(async(u:{id:string}|null)=>{if(!u){setProfile(null);return}const cached=readCachedProfile(u.id);if(cached)setProfile(cached);const{data}=await supabase.from("profiles").select("id,display_name,username,avatar_url").eq("id",u.id).maybeSingle();if(data){const next=data as Profile;setProfile(next);writeCachedProfile(next)}},[supabase]);
@@ -146,10 +150,10 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
     <header className="topbar"><div className="brand"><span className="gista-mark gista-mark-feed" aria-hidden="true"><span>G</span></span><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
     <section className="content">
       <div className="feed-tabs">{["Discover","Following"].map(x=><button key={x} className={tab===x?"tab active":"tab"} onClick={()=>{if(x!==tab){setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(x)}}}>{x}</button>)}</div>
-      <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><Link className="composer-input" href="/create">What&apos;s on your mind?</Link><Link className="create-btn" aria-label="Create Post" href="/create"><Plus size={19}/></Link></div>
+      <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><button type="button" className="composer-input" onClick={()=>setCreateSheetOpen(true)}>What&apos;s on your mind?</button><button type="button" className="create-btn" aria-label="Create Post" onClick={()=>setCreateSheetOpen(true)}><Plus size={19}/></button></div>
       <div className="feed">
         {loading&&posts.length===0?<div className="feed-skeleton"><div className="skeleton-post"/><div className="skeleton-post"/></div>:feedError&&posts.length===0?<div className="empty-state"><h3>We couldn&apos;t load the Posts</h3><p>{feedError}</p><button className="primary small" onClick={()=>void loadPosts(user)}>Try again</button></div>:posts.length===0?<div className="empty-state"><h3>No Posts yet</h3><p>{tab==="Following"?"Follow people to see their Posts here.":"Be the first person to create a Post."}</p></div>:posts.map((p,i)=><article className="profile-gist" key={p.id}>
-          <div className="post-head"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"} className="avatar">{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" loading={i<6?"eager":"lazy"} fetchPriority={i<3?"high":"auto"} decoding="async" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:p.profiles?.display_name?.[0]?.toUpperCase()||"G"}</Link><div className="identity"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"}><strong>{p.profiles?.display_name??"Gista User"}</strong></Link><span>@{p.profiles?.username??"user"} · {new Date(p.created_at).toLocaleString()}</span></div><span className="category">{p.category}</span></div>
+          <div className="post-head"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"} className="avatar">{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" loading={i<6?"eager":"lazy"} fetchPriority={i<3?"high":"auto"} decoding="async" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:p.profiles?.display_name?.[0]?.toUpperCase()||"G"}</Link><div className="identity"><Link href={p.profiles?.username?"/profile/"+p.profiles.username:"/profile"}><strong>{p.profiles?.display_name??"Gista User"}</strong></Link><span>@{p.profiles?.username??"user"} · {formatRelativeTime(p.created_at)}</span></div><span className="category">{p.category}</span></div>
           <Link className="profile-gist-content" href={"/post/"+p.id}>{p.body&&<p>{p.body}</p>} {p.content_type==="photo"&&p.media_url&&<img className="gist-media" src={p.media_url} alt="Post" loading={i===0?"eager":"lazy"}/>}</Link>
           {p.content_type==="voice"&&p.media_url&&<div className="profile-gist-voice"><VoicePlayer src={p.media_url}/></div>}
           {p.participantCount>0&&<JoinedParticipants postId={p.id} participantCount={p.participantCount} previewParticipants={p.participants}/>}
@@ -157,6 +161,7 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
         </article>)}
       </div>
     </section>
+    {createSheetOpen && <CreateSheet onClose={()=>setCreateSheetOpen(false)}/>}
     <BottomNav active="home"/>
   </main>
 }
