@@ -39,7 +39,7 @@ export default function BottomNav({ active }: { active: ActiveTab }) {
         <Search size={21} strokeWidth={active === "search" ? 2.5 : 2} />
         <span>Search</span>
       </Link>
-      <Link href="/?create=1" className="nav-create" aria-label="Create Post">
+      <Link href="/create" className="nav-create" aria-label="Create Post">
         <Plus size={27} strokeWidth={2.4} />
       </Link>
       <Link href="/notifications" className={`${itemClass("notifications")} notification-nav`} aria-current={active === "notifications" ? "page" : undefined}>
