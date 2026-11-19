@@ -9,7 +9,6 @@ import VoiceNote from "@/components/VoiceNote";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 type Profile = {
-function formatRelativeTime(value:string){const created=new Date(value),diff=Math.max(0,Date.now()-created.getTime());const minutes=Math.floor(diff/60000);if(minutes<1)return "Just now";if(minutes<60)return minutes+"m ago";const hours=Math.floor(diff/3600000);if(hours<24)return hours+"h ago";const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(created.toDateString()===yesterday.toDateString())return "Yesterday";return created.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
   id: string;
   username: string;
   display_name: string | null;
@@ -18,6 +17,9 @@ function formatRelativeTime(value:string){const created=new Date(value),diff=Mat
   cover_url: string | null;
   is_private: boolean;
 };
+
+function formatRelativeTime(value:string){const created=new Date(value),diff=Math.max(0,Date.now()-created.getTime());const minutes=Math.floor(diff/60000);if(minutes<1)return "Just now";if(minutes<60)return minutes+"m ago";const hours=Math.floor(diff/3600000);if(hours<24)return hours+"h ago";const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(created.toDateString()===yesterday.toDateString())return "Yesterday";return created.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
+
 
 type PublicPost = {
   id: string;
