@@ -1218,20 +1218,3 @@ main.content {
   fill: #7c3aed !important;
   stroke: #7c3aed !important;
 }
-
-
-/* Universal create options sheet */
-.create-sheet-backdrop{position:fixed;inset:0;background:rgba(24,16,38,.42);z-index:80;display:flex;align-items:flex-end;justify-content:center}
-.create-sheet{width:min(100%,680px);background:#fff;border-radius:24px 24px 0 0;padding:12px 20px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(22,12,40,.18);animation:create-sheet-in .18s ease-out}
-.create-sheet-handle{width:42px;height:4px;border-radius:10px;background:#ddd6e7;margin:0 auto 18px}
-.create-sheet-heading{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
-.create-sheet-heading h2{font-size:20px;margin:0 0 5px;color:#21172f}
-.create-sheet-heading p{font-size:13px;color:#81788b;margin:0}
-.create-sheet-heading>button{width:36px;height:36px;border-radius:50%;background:#f5f2f8;display:grid;place-items:center}
-.create-sheet-options{display:grid;gap:10px}
-.create-sheet-options>button{display:flex;align-items:center;gap:14px;text-align:left;border:1px solid #eee8f5;border-radius:16px;padding:14px;background:#fff}
-.create-option-icon{width:46px;height:46px;border-radius:14px;background:#f1eaff;color:#7c3aed;display:grid;place-items:center}
-.create-sheet-options strong{display:block;font-size:15px;color:#241b30}
-.create-sheet-options small{display:block;font-size:12px;color:#82798d;margin-top:3px}
-@keyframes create-sheet-in{from{transform:translateY(18px);opacity:.7}to{transform:translateY(0);opacity:1}}
-@media(prefers-reduced-motion:reduce){.create-sheet{animation:none}}
