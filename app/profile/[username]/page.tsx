@@ -222,7 +222,7 @@ export default function PublicProfile() {
           {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
         <div className="profile-identity-copy">
-          <h1>{profile.display_name ?? "Gista User"}{isVerified && <VerifiedBadge />}</h1>
+          <h1>{profile.display_name ?? "Gista User"}{profile.id && <VerifiedBadge profileId={profile.id} />}</h1>
           <p className="profile-username">@{profile.username}</p>
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         </div>
@@ -240,7 +240,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {formatRelativeTime(post.created_at)}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{profile.id && <VerifiedBadge profileId={profile.id} />}</Link><span>@{profile.username} · {formatRelativeTime(post.created_at)}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>
