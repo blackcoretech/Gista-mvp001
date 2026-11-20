@@ -226,8 +226,15 @@ export default function ProfilePage() {
     };
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
+    // Realtime delivery can be delayed or unavailable for this table in some
+    // sessions. Recheck the single profile's verification status while visible
+    // so admin revocation/approval is reflected without a manual page refresh.
+    const verificationPoll = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshVerification();
+    }, 3000);
     return () => {
       active = false;
+      window.clearInterval(verificationPoll);
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
       void supabase.removeChannel(channel);
@@ -303,7 +310,7 @@ export default function ProfilePage() {
     <header className="profile-header"><Link href="/" className="profile-back">‹ Home</Link><strong>Profile</strong><Link href="/settings" className="profile-settings" aria-label="Settings"><Settings size={20}/></Link></header>
     <section className="profile-wrap">
       <section className="profile-hero profile-hero-with-cover">
-        <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
+        <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo" title="Change cover photo" style={{width:30,height:30,minWidth:30,padding:0,gap:0,justifyContent:"center",borderRadius:"50%",right:10,bottom:10,background:"#fff",color:"#5b21b6",boxShadow:"0 2px 8px #00000020"}}><Camera size={14}/><span style={{display:"none"}}>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
         <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
         <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
         <div className="profile-stats profile-stats-two"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
