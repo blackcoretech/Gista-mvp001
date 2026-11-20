@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 type Person = { id: string; display_name: string | null; username: string | null; avatar_url: string | null };
 
@@ -83,7 +84,7 @@ export default function JoinedParticipants({ postId, participantCount, previewPa
           {loading ? <p className="joined-sheet-state">Loading people…</p> : error ? <p className="joined-sheet-state">{error}</p> : people.length === 0 ? <p className="joined-sheet-state">No participants to show yet.</p> : people.map((person) => <div className="joined-person" key={person.id}>
             <Link className="joined-person-profile" href={person.username ? "/profile/" + person.username : "/profile"} onClick={() => setOpen(false)}>
               <span className="joined-person-avatar">{person.avatar_url ? <img src={person.avatar_url} alt="" /> : (person.display_name?.[0] ?? person.username?.[0] ?? "G").toUpperCase()}</span>
-              <span className="joined-person-copy"><strong>{person.display_name ?? "Gista User"}</strong><span>@{person.username ?? "user"}</span></span>
+              <span className="joined-person-copy"><strong>{person.display_name ?? "Gista User"}</strong><VerifiedBadge profileId={person.id}/><span>@{person.username ?? "user"}</span></span>
             </Link>
             {person.id !== myId && <button type="button" className={followingIds.has(person.id) ? "joined-follow-button is-following" : "joined-follow-button"} onClick={() => void toggleFollow(person)} disabled={busyId === person.id}>{busyId === person.id ? "…" : followingIds.has(person.id) ? "Following" : "Follow"}</button>}
           </div>)}
