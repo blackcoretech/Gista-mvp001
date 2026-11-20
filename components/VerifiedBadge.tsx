@@ -5,6 +5,22 @@ import { createClient } from "@/lib/supabase/client";
 
 type Listener = (verified: boolean) => void;
 const listeners = new Map<string, Set<Listener>>();
+const VERIFICATION_CACHE_PREFIX = "gista:verified-account:";
+
+// Read the last confirmed status synchronously so the badge can render in the
+// same paint as the name. The database remains authoritative and refreshes it.
+function readVerificationCache(profileId: string): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = window.localStorage.getItem(VERIFICATION_CACHE_PREFIX + profileId);
+    return cached === null ? null : cached === "1";
+  } catch { return null; }
+}
+
+function writeVerificationCache(profileId: string, verified: boolean) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(VERIFICATION_CACHE_PREFIX + profileId, verified ? "1" : "0"); } catch {}
+}
 let sharedChannel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
 let sharedClient: ReturnType<typeof createClient> | null = null;
 
@@ -21,20 +37,21 @@ function ensureVerificationChannel() {
     .on("broadcast", { event: "verification-updated" }, ({ payload }) => {
       const profileId = typeof payload?.profile_id === "string" ? payload.profile_id : "";
       if (!profileId || typeof payload?.is_verified !== "boolean") return;
+      writeVerificationCache(profileId, payload.is_verified);
       listeners.get(profileId)?.forEach((listener) => listener(payload.is_verified));
     })
     .subscribe();
 }
 
 export default function VerifiedBadge({ profileId }: { profileId: string }) {
-  const [verified, setVerified] = useState(false);
+  const [verified, setVerified] = useState(() => readVerificationCache(profileId) ?? false);
   const receivedLiveUpdate = useRef(false);
 
   useEffect(() => {
     if (!profileId) return;
     let active = true;
     receivedLiveUpdate.current = false;
-    const listener: Listener = (next) => { if (active) { receivedLiveUpdate.current = true; setVerified(next); } };
+    const listener: Listener = (next) => { if (active) { receivedLiveUpdate.current = true; writeVerificationCache(profileId, next); setVerified(next); } };
     const group = listeners.get(profileId) ?? new Set<Listener>();
     group.add(listener);
     listeners.set(profileId, group);
@@ -47,7 +64,7 @@ export default function VerifiedBadge({ profileId }: { profileId: string }) {
       .eq("verification_type", "official")
       .maybeSingle()
       .then(({ data, error }) => {
-        if (active && !error && !receivedLiveUpdate.current) setVerified(!!data);
+        if (active && !error && !receivedLiveUpdate.current) { const next = !!data; writeVerificationCache(profileId, next); setVerified(next); }
       });
 
     return () => {
