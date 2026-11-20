@@ -1218,3 +1218,38 @@ main.content {
   fill: #7c3aed !important;
   stroke: #7c3aed !important;
 }
+
+
+/* Verification badge: keep it attached to the profile name on one line. */
+.profile-page .profile-identity-copy h1 {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.profile-page .profile-identity-copy h1 .profile-name-line {
+  display: inline-flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  max-width: 100% !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+.profile-page .profile-identity-copy h1 .profile-display-name {
+  display: inline-block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+}
+.profile-page .profile-identity-copy h1 [aria-label="Verified account"] {
+  display: inline-flex !important;
+  flex: 0 0 13px !important;
+  width: 13px !important;
+  height: 13px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
