@@ -1255,13 +1255,25 @@ main.content {
 }
 
 
-/* App-entry splash screen: reuse the exact Gista feed mark. */
-.gista-splash{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#fff;color:#17151c}
-.gista-splash-brand{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:850;letter-spacing:-1px}
-.gista-splash-brand .gista-mark-feed{width:42px;height:38px;border-radius:12px 12px 12px 7px}
-.gista-splash-brand .gista-mark-feed::after{left:5px;bottom:-4px;width:10px;height:10px}
-.gista-splash-brand .gista-mark-feed span{font-size:27px;letter-spacing:-1px}
-.gista-splash p{margin:0;color:#77727f;font-size:13px;font-weight:550}
-.gista-splash-loader{width:22px;height:3px;margin-top:14px;border-radius:999px;background:#eee7ff;overflow:hidden;position:relative}
-.gista-splash-loader::after{content:"";position:absolute;inset:0;width:45%;border-radius:inherit;background:#6d28d9;animation:gista-splash-progress .8s ease-in-out infinite alternate}
-@keyframes gista-splash-progress{from{transform:translateX(0)}to{transform:translateX(125%)}}
+
+
+/* Native app launch: show only the feed-matching Gista icon briefly. */
+.gista-splash{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:#fff}
+.gista-splash-icon{width:112px;height:100px;display:grid;place-items:center;position:relative;border-radius:32px 32px 32px 19px;background:linear-gradient(145deg,#8b3dff 0%,#6d28d9 55%,#4f46e5 100%);color:#fff;font-size:78px;font-weight:900;letter-spacing:-7px;line-height:1}
+.gista-splash-icon::after{content:"";position:absolute;left:2px;bottom:-11px;width:26px;height:26px;background:#6d28d9;clip-path:polygon(0 0,100% 0,0 100%)}
+.gista-splash-icon span{position:relative;z-index:1}
+@media(prefers-reduced-motion:no-preference){.gista-splash-icon{animation:gista-launch-in .22s ease-out both}@keyframes gista-launch-in{from{opacity:.7;transform:scale(.94)}to{opacity:1;transform:scale(1)}}}
+
+/* Stable, mobile-first authentication layout without a nested white card. */
+.auth-page{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding: max(28px,env(safe-area-inset-top)) 22px max(28px,env(safe-area-inset-bottom));background:#f7f7fb}
+.auth-card{width:min(100%,400px);margin:auto;background:transparent;border:0;border-radius:0;padding:0;box-shadow:none;flex:0 0 auto}
+.auth-brand{justify-content:flex-start;margin:0 0 30px}
+.auth-card h1{font-size:29px;line-height:1.2;letter-spacing:-.7px;margin:0 0 8px}
+.auth-card>p{font-size:14px;line-height:1.5;margin:0 0 26px}
+.auth-card form{gap:18px}
+.auth-card label{gap:8px}
+.auth-card input:not([type="checkbox"]){min-height:48px;border-radius:12px;padding:13px 14px;background:#fff}
+.auth-card input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px #7c3aed18}
+.auth-card .primary{min-height:49px;border-radius:12px;margin-top:3px}
+.auth-card .switch,.auth-card .forgot{margin-top:20px}
+@media(max-height:650px){.auth-page{align-items:flex-start}.auth-card{margin-top:12px}}
