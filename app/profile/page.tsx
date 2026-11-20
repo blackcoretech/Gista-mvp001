@@ -102,7 +102,7 @@ export default function ProfilePage() {
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) {
       writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? "");
-    } else { setIsVerified(false); }
+    }
     setComments((userCommentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
     const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
