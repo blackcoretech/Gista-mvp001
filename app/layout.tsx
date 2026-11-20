@@ -17,8 +17,24 @@ import FeedSessionTracker from "@/components/FeedSessionTracker";
 import FeedScrollRestoration from "@/components/FeedScrollRestoration";
 
 export const metadata: Metadata = {
+  applicationName: "Gista",
   title: "Gista",
   description: "Where people talk, share, connect, and belong. Every Post Starts a Conversation.",
+  appleWebApp: {
+    capable: true,
+    title: "Gista",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#17131f" },
+  ],
 };
 
 export default function RootLayout({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) {
