@@ -137,9 +137,44 @@ export default function AdminVerificationPage() {
     if (actionError) setError("Could not save verification decision: " + actionError.message);
     else {
       const result = data as { is_verified?: boolean; verification_type?: string | null };
-      const updated: Candidate = { ...selected, is_verified: Boolean(result?.is_verified), verification_type: result?.is_verified && result?.verification_type === "official" ? "official" : null };
+      const isVerified = Boolean(result?.is_verified);
+      const updated: Candidate = { ...selected, is_verified: isVerified, verification_type: isVerified && result?.verification_type === "official" ? "official" : null };
       setSelected(updated);
       setCandidates((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+      // Push the committed decision directly to the affected profile session.
+      // This avoids waiting for database-change replication or a polling cycle.
+      const verificationChannel = supabase.channel("gista-verification-" + selected.id);
+      const channelReady = await new Promise<boolean>((resolve) => {
+        verificationChannel.subscribe((status) => {
+          if (status === "SUBSCRIBED") resolve(true);
+          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") resolve(false);
+        });
+      });
+      if (channelReady) {
+        await verificationChannel.send({
+          type: "broadcast",
+          event: "verification-updated",
+          payload: { is_verified: isVerified },
+        });
+      }
+      await supabase.removeChannel(verificationChannel);
+      // Publish to the shared Gista-wide verification topic so every mounted
+      // badge (feed, profile, Post detail, comments and replies) updates at once.
+      const globalVerificationChannel = supabase.channel("gista-verification-updates");
+      const globalChannelReady = await new Promise<boolean>((resolve) => {
+        globalVerificationChannel.subscribe((status) => {
+          if (status === "SUBSCRIBED") resolve(true);
+          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") resolve(false);
+        });
+      });
+      if (globalChannelReady) {
+        await globalVerificationChannel.send({
+          type: "broadcast",
+          event: "verification-updated",
+          payload: { profile_id: selected.id, is_verified: isVerified },
+        });
+      }
+      await supabase.removeChannel(globalVerificationChannel);
       const { data: fresh, error: freshError } = await supabase.rpc("admin_get_verification_review", { target_profile_id: selected.id });
       if (!freshError) setReview(fresh as ReviewData);
       setMessage(decision === "approved" ? "Public figure verified. The Gista badge is now active across Gista." : decision === "revoked" ? "Public figure badge removed." : "Review recorded. No public badge was granted.");

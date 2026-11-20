@@ -11,10 +11,10 @@ import "./performance-fixes.css";
 import "./formal-architecture.css";
 import "./dark-mode-visibility-fix.css";
 import "./post-modal.css";
-import VerifiedBadgeInjector from "@/components/VerifiedBadgeInjector";
 import ThemeProvider from "@/components/ThemeProvider";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import FeedSessionTracker from "@/components/FeedSessionTracker";
+import FeedScrollRestoration from "@/components/FeedScrollRestoration";
 
 export const metadata: Metadata = {
   title: "Gista",
@@ -33,9 +33,9 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
       </head>
       <body>
         <ThemeProvider>
-          <VerifiedBadgeInjector />
           <AnalyticsTracker />
           <FeedSessionTracker />
+          <FeedScrollRestoration />
           {children}
           {modal}
         </ThemeProvider>

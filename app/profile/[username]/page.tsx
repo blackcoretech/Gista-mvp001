@@ -45,7 +45,6 @@ export default function PublicProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [following, setFollowing] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
   const [counts, setCounts] = useState({ posts: 0, likes: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<PublicPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +56,7 @@ export default function PublicProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     setMe(user ? { id: user.id } : null);
     const { data, error } = await supabase.from("profiles").select("id,username,display_name,bio,avatar_url,cover_url,is_private,following_private").eq("username", username).single();
-    if (error || !data) { setProfile(null); setIsVerified(false); setLoading(false); return; }
+    if (error || !data) { setProfile(null); setLoading(false); return; }
     if (user?.id === data.id) { router.replace("/profile"); return; }
     const [followState, statsResult, initialPostsResult, totalLikesResult] = await Promise.all([
       user ? supabase.from("follows").select("follower_id").eq("follower_id", user.id).eq("following_id", data.id).maybeSingle() : Promise.resolve({ data: null }),
@@ -72,10 +71,9 @@ export default function PublicProfile() {
       const retry = await supabase.from("posts").select("id,body,content_type,media_url,category,status,created_at,voice_duration_seconds", { count: "exact" }).eq("author_id", data.id).order("created_at", { ascending: false }).limit(30);
       if (!retry.error && (retry.data ?? []).length > 0) postsResult = retry;
     }
-    const { data: verification } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", data.id).eq("verification_type", "official").maybeSingle();
     const profileStats = statsResult.data?.[0] as { gists?: number; posts?: number; followers?: number; following?: number } | undefined;
     const isFollowing = !!followState.data;
-    setProfile(data as Profile); setIsVerified(!!verification); setFollowing(isFollowing);
+    setProfile(data as Profile); setFollowing(isFollowing);
     const rpcPostCount = Number(profileStats?.posts ?? profileStats?.gists ?? 0);
     // Use the strongest available count so an RLS-filtered zero from the posts
     // list cannot mask the aggregate count for a public profile.
@@ -114,50 +112,6 @@ export default function PublicProfile() {
   }
 
   useEffect(() => { void load(); }, [supabase, username]);
-
-  // Keep the public profile badge in sync when an admin verifies or revokes this account.
-  // Realtime updates the open page immediately; focus/visibility checks cover returning to the tab.
-  useEffect(() => {
-    if (!profile?.id) return;
-    let active = true;
-
-    const refreshVerification = async () => {
-      const { data, error } = await supabase
-        .from("verified_profiles")
-        .select("profile_id")
-        .eq("profile_id", profile.id)
-        .eq("verification_type", "official")
-        .maybeSingle();
-      if (active && !error) setIsVerified(!!data);
-    };
-
-    const channel = supabase
-      .channel("profile-verification-" + profile.id)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "verified_profiles",
-          filter: "profile_id=eq." + profile.id,
-        },
-        () => { void refreshVerification(); },
-      )
-      .subscribe();
-
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void refreshVerification();
-    };
-    window.addEventListener("focus", refreshWhenVisible);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-
-    return () => {
-      active = false;
-      window.removeEventListener("focus", refreshWhenVisible);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-      void supabase.removeChannel(channel);
-    };
-  }, [supabase, profile?.id]);
 
   async function toggleFollow() {
     if (!me) { router.push("/auth"); return; }
@@ -218,7 +172,7 @@ export default function PublicProfile() {
           {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
         <div className="profile-identity-copy">
-          <h1>{profile.display_name ?? "Gista User"}{isVerified && <VerifiedBadge />}</h1>
+          <h1 style={{ display: "block", width: "100%", maxWidth: "100%" }}><span className="profile-name-line" style={{ display: "inline-flex", flexDirection: "row", flexWrap: "nowrap", alignItems: "center", gap: 5, maxWidth: "100%", verticalAlign: "middle", whiteSpace: "nowrap" }}><span className="profile-display-name" style={{ display: "inline-block", minWidth: 0, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.display_name ?? "Gista User"}</span>{profile.id && <VerifiedBadge profileId={profile.id} />}</span></h1>
           <p className="profile-username">@{profile.username}</p>
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         </div>
@@ -236,7 +190,7 @@ export default function PublicProfile() {
               <Link href={"/profile/" + profile.username} className="avatar" aria-label="Open profile">
                 {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : (profile.display_name?.[0]?.toUpperCase() ?? "G")}
               </Link>
-              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", alignItems: "center", alignSelf: "flex-start", gap: 4, width: "max-content", maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline" }}>{profile.display_name ?? "Gista User"}</strong>{isVerified && <VerifiedBadge />}</Link><span>@{profile.username} · {formatRelativeTime(post.created_at)}</span></div>
+              <div className="identity"><Link href={"/profile/" + profile.username} style={{ display: "inline-flex", flexDirection: "row", flexWrap: "nowrap", alignItems: "center", alignSelf: "flex-start", gap: 4, maxWidth: "100%", textDecoration: "none", lineHeight: 1.2 }}><strong style={{ display: "inline", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.display_name ?? "Gista User"}</strong><VerifiedBadge profileId={profile.id} /></Link><span>@{profile.username} · {formatRelativeTime(post.created_at)}</span></div>
               <span className="category">{post.category}</span>
             </div>
             <Link className="profile-gist-content" href={"/post/" + post.id}>

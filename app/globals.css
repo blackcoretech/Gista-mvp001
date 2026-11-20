@@ -519,7 +519,7 @@
 .profile-camera{width:32px;height:32px;right:0;bottom:3px}
 .profile-edit-pill{margin:0 0 8px auto;border-radius:999px;min-height:42px;padding:0 20px;background:#f1eafe;color:#24133f;white-space:nowrap}
 .profile-identity-copy{padding:8px 2px 0}
-.profile-identity-copy h1{margin:0;font-size:27px;line-height:1.15;letter-spacing:-.8px}
+.profile-identity-copy h1{display:flex;align-items:center;flex-wrap:nowrap;gap:5px;width:max-content;max-width:100%;margin:0;font-size:27px;line-height:1.15;letter-spacing:-.8px}.profile-identity-copy h1 .profile-display-name{min-width:0;overflow-wrap:anywhere}.profile-identity-copy h1 [aria-label="Verified account"]{flex:0 0 13px;white-space:nowrap}
 .profile-identity-copy .profile-username{margin-top:4px;font-size:15px}
 .profile-identity-copy .profile-bio{margin:12px 0 0;max-width:520px;font-size:15px;line-height:1.4}
 .profile-stats{width:100%;max-width:none!important;margin:20px 0 2px!important;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center}
@@ -1217,4 +1217,39 @@ main.content {
   color: #7c3aed !important;
   fill: #7c3aed !important;
   stroke: #7c3aed !important;
+}
+
+
+/* Verification badge: keep it attached to the profile name on one line. */
+.profile-page .profile-identity-copy h1 {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.profile-page .profile-identity-copy h1 .profile-name-line {
+  display: inline-flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  max-width: 100% !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+.profile-page .profile-identity-copy h1 .profile-display-name {
+  display: inline-block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+}
+.profile-page .profile-identity-copy h1 [aria-label="Verified account"] {
+  display: inline-flex !important;
+  flex: 0 0 13px !important;
+  width: 13px !important;
+  height: 13px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
 }

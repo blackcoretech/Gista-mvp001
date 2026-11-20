@@ -9,6 +9,7 @@ import { signOut } from "@/lib/auth";
 import VoicePlayer from "@/components/voice-player";
 import VoiceNote from "@/components/VoiceNote";
 import BottomNav from "@/components/BottomNav";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { browserStorage, invalidateUserFeedCache } from "@/lib/feed-cache";
 
 type Profile = { id: string; username: string | null; display_name: string | null; bio: string | null; avatar_url: string | null; cover_url: string | null };
@@ -41,7 +42,6 @@ export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
   const [edit, setEdit] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -102,9 +102,7 @@ export default function ProfilePage() {
     if (profileResult.error && !data) setError(profileResult.error.message);
     if (data) {
       writeCachedProfile(data); setProfile(data); setDisplayName(data.display_name ?? fallbackName); setUsername(data.username ?? ""); setBio(data.bio ?? "");
-      const { data: verification, error: verificationError } = await supabase.from("verified_profiles").select("profile_id").eq("profile_id", user.id).maybeSingle();
-      if (!verificationError) setIsVerified(!!verification);
-    } else { setIsVerified(false); }
+    }
     setComments((userCommentsResult.data ?? []) as unknown as MyComment[]);
     const rawStats = statsResult.data?.[0] as { posts?: number; gists?: number; followers?: number; following?: number } | undefined;
     const rpcPostCount = Number(rawStats?.posts ?? rawStats?.gists ?? 0);
@@ -199,41 +197,6 @@ export default function ProfilePage() {
     return () => { void supabase.removeChannel(channel); };
   }, [supabase, profile?.id]);
 
-  // Keep the own-profile post badges consistent with the public profile when
-  // an administrator grants or revokes verification while this page is open.
-  useEffect(() => {
-    if (!profile?.id) return;
-    let active = true;
-    const refreshVerification = async () => {
-      const { data, error } = await supabase
-        .from("verified_profiles")
-        .select("profile_id")
-        .eq("profile_id", profile.id)
-        .maybeSingle();
-      if (active && !error) setIsVerified(!!data);
-    };
-    const channel = supabase
-      .channel("own-profile-verification-" + profile.id)
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "verified_profiles",
-        filter: "profile_id=eq." + profile.id,
-      }, () => { void refreshVerification(); })
-      .subscribe();
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void refreshVerification();
-    };
-    window.addEventListener("focus", refreshWhenVisible);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-    return () => {
-      active = false;
-      window.removeEventListener("focus", refreshWhenVisible);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-      void supabase.removeChannel(channel);
-    };
-  }, [supabase, profile?.id]);
-
   async function uploadProfileMedia(file: File, kind: "avatar" | "cover") {
     setError(""); setMessage("");
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return setError("Use a JPG, PNG, or WebP image.");
@@ -303,9 +266,9 @@ export default function ProfilePage() {
     <header className="profile-header"><Link href="/" className="profile-back">‹ Home</Link><strong>Profile</strong><Link href="/settings" className="profile-settings" aria-label="Settings"><Settings size={20}/></Link></header>
     <section className="profile-wrap">
       <section className="profile-hero profile-hero-with-cover">
-        <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo"><Camera size={16}/><span>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
+        <div className="profile-cover">{profile?.cover_url && <img src={profile.cover_url} alt=""/>}<label className="profile-cover-camera" aria-label="Change cover photo" title="Change cover photo" style={{width:30,height:30,minWidth:30,padding:0,gap:0,justifyContent:"center",borderRadius:"50%",right:10,bottom:10,background:"#fff",color:"#5b21b6",boxShadow:"0 2px 8px #00000020"}}><Camera size={14}/><span style={{display:"none"}}>{profile?.cover_url ? "Change cover" : "Add cover"}</span><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={coverUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"cover");event.currentTarget.value="";}}/></label></div>
         <div className="profile-identity-row"><div className="profile-photo-wrap"><div className="profile-photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile"/>:<span>{initials}</span>}</div><label className="profile-camera" aria-label="Change profile photo"><Camera size={16}/><input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarUploading} onChange={(event)=>{const file=event.target.files?.[0];if(file)void uploadProfileMedia(file,"avatar");event.currentTarget.value="";}}/></label></div><button className="profile-primary profile-edit-pill" type="button" onClick={()=>{setEdit((value)=>!value);setError("");setMessage("");}}>{edit?"Close editor":"Edit profile"}</button></div>
-        <div className="profile-identity-copy"><h1>{profile?.display_name || displayName || "Gista User"}</h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
+        <div className="profile-identity-copy"><h1 style={{ display: "block", width: "100%", maxWidth: "100%" }}><span className="profile-name-line" style={{ display: "inline-flex", flexDirection: "row", flexWrap: "nowrap", alignItems: "center", gap: 5, maxWidth: "100%", verticalAlign: "middle", whiteSpace: "nowrap" }}><span className="profile-display-name" style={{ display: "inline-block", minWidth: 0, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile?.display_name || displayName || "Gista User"}</span>{profile?.id && <VerifiedBadge profileId={profile.id} />}</span></h1>{profileUsername && <p className="profile-username">@{profileUsername}</p>}{profile?.bio && <p className="profile-bio">{profile.bio}</p>}</div>
         <div className="profile-stats profile-stats-two"><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/followers`:"#"}><strong>{stats.followers}</strong><span>Followers</span></Link><Link className="profile-stat-item" href={profileUsername?`/profile/${profileUsername}/following`:"#"}><strong>{stats.following}</strong><span>Following</span></Link></div>
         {((loading&&!profile)||avatarUploading||coverUploading||message||error)&&<div className={error?"profile-feedback error":"profile-feedback"}>{(loading&&!profile)?"Loading profile details…":avatarUploading?"Uploading profile photo…":coverUploading?"Uploading cover photo…":message||error}</div>}
       </section>
@@ -319,7 +282,7 @@ export default function ProfilePage() {
         {activeTab==="comments" ? <div className="profile-replies">{comments.length===0?<div className="profile-empty"><h3>No Comments yet</h3><p>Your comments on other people’s Gists will appear here.</p></div>:comments.map((comment)=><article className="profile-reply" key={comment.id}><span className="profile-reply-label">You commented on a Gist</span>{comment.body&&<p>{comment.body}</p>}{comment.content_type==="voice"&&<span className="profile-reply-label">Voice comment</span>}<Link href={"/post/"+comment.post_id}>View Gist{comment.posts?.body?": "+comment.posts.body.slice(0,100):""}</Link><small>{new Date(comment.created_at).toLocaleString()}</small></article>)}</div>
         : activeTab==="saved" ? <div className="profile-saved-posts">{savedLoading?<div className="feed-skeleton" aria-label="Loading saved Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:savedPosts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Saved Posts yet</h3><p>Posts you bookmark will appear here.</p><Link href="/" className="profile-primary">Discover Posts</Link></div>:savedPosts.map((post)=><article className="profile-gist profile-saved-gist" key={post.id}><div className="gist-status"><span className="dot">●</span>Saved Post <span>{new Date(post.created_at).toLocaleDateString()}</span></div><Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img className="gist-media" src={post.media_url} alt="Saved Post" loading="lazy"/>}</Link>{post.content_type==="voice"&&post.media_url&&<VoicePlayer src={post.media_url} className="voice-player feed-voice-player"/>}<Link className="profile-saved-open" href={"/post/"+post.id}>Open Post</Link></article>)}</div>
         : <>{loading?<div className="feed-skeleton" aria-label="Loading Posts"><div className="skeleton-post"/><div className="skeleton-post"/></div>:posts.length===0?<div className="profile-empty"><div className="empty-g">G</div><h3>No Posts yet</h3><p>Share your first thought, story, photo, or voice Post.</p><Link href="/create" className="profile-primary">Create Post</Link></div>:<div className="feed profile-gists">{posts.map((post)=><article className="profile-gist" key={post.id}>
-          <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile" style={{display:"inline-flex",alignItems:"center",alignSelf:"flex-start",gap:4,maxWidth:"100%",textDecoration:"none"}}><strong>{profile?.display_name||displayName||"Gista User"}</strong>{isVerified&&<span title="Verified account" aria-label="Verified account" className="verified-badge" style={{display:"inline-flex",flex:"0 0 13px",alignItems:"center",justifyContent:"center",width:13,height:13,borderRadius:"50%",background:"#6D28D9",color:"#fff",fontSize:8,fontWeight:800,lineHeight:1}}>✓</span>}</Link><span>@{profileUsername||"user"} · {formatRelativeTime(post.created_at)}</span></div><span className="category">{post.category}</span></div>
+          <div className="post-head"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initials}</Link><div className="identity"><Link href="/profile" style={{display:"inline-flex",flexDirection:"row",flexWrap:"nowrap",alignItems:"center",alignSelf:"flex-start",gap:4,maxWidth:"100%",textDecoration:"none",lineHeight:1.2}}><strong style={{display:"inline",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name||displayName||"Gista User"}</strong>{profile?.id && <VerifiedBadge profileId={profile.id} />}</Link><span>@{profileUsername||"user"} · {formatRelativeTime(post.created_at)}</span></div><span className="category">{post.category}</span></div>
           <Link className="profile-gist-content" href={"/post/"+post.id}>{post.body&&<p>{post.body}</p>}{post.content_type==="photo"&&post.media_url&&<img className="gist-media" src={post.media_url} alt="Post" loading="lazy"/>}</Link>
           {post.content_type==="voice"&&post.media_url&&<div className="profile-gist-voice"><VoiceNote src={post.media_url} durationHint={post.voice_duration_seconds}/></div>}
           <div className="actions profile-gist-actions"><button type="button" className={post.liked?"liked":""} onClick={()=>void toggleLike(post)} disabled={busy===post.id+"l"} aria-label="Like Post"><Heart size={18} fill={post.liked?"currentColor":"none"}/> {post.likes}</button><Link className="feed-action-link" href={"/post/"+post.id+"?comments=1"} aria-label="Comments"><MessageCircle size={18}/> {post.comments}</Link><button type="button" onClick={()=>void sharePost(post)} aria-label="Share Post"><Share2 size={18}/> {post.shares}</button><button type="button" className={post.saved?"saved-action":""} onClick={()=>void toggleSave(post)} disabled={busy===post.id+"s"} aria-label={post.saved?"Unsave Post":"Save Post"}><Bookmark size={18} fill={post.saved?"currentColor":"none"}/> {post.saves}</button></div>

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./relationship.module.css";
 import VoiceNote from "@/components/VoiceNote";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 type Person = {
   id: string;
@@ -187,7 +188,7 @@ export default function RelationshipPage() {
                   {person.avatar_url ? <img src={person.avatar_url} alt="" /> : (person.display_name?.[0]?.toUpperCase() ?? "G")}
                 </div>
                 <div>
-                  <strong>{person.display_name ?? "Gista User"}</strong>
+                  <strong>{person.display_name ?? "Gista User"}</strong><VerifiedBadge profileId={person.id}/>
                   <span>@{person.username ?? "username"}</span>
                 </div>
               </Link>
