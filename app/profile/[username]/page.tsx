@@ -172,7 +172,7 @@ export default function PublicProfile() {
           {me?.id !== profile.id && <button className="profile-primary profile-edit-pill" type="button" onClick={() => void toggleFollow()}>{following ? "Unfollow" : "Follow"}</button>}
         </div>
         <div className="profile-identity-copy">
-          <h1><span className="profile-display-name">{profile.display_name ?? "Gista User"}</span>{profile.id && <VerifiedBadge profileId={profile.id} />}</h1>
+          <h1><span className="profile-name-line"><span className="profile-display-name">{profile.display_name ?? "Gista User"}</span>{profile.id && <VerifiedBadge profileId={profile.id} />}</span></h1>
           <p className="profile-username">@{profile.username}</p>
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         </div>
