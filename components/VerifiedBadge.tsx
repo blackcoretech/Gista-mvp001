@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Listener = (verified: boolean) => void;
@@ -28,11 +28,13 @@ function ensureVerificationChannel() {
 
 export default function VerifiedBadge({ profileId }: { profileId: string }) {
   const [verified, setVerified] = useState(false);
+  const receivedLiveUpdate = useRef(false);
 
   useEffect(() => {
     if (!profileId) return;
     let active = true;
-    const listener: Listener = (next) => { if (active) setVerified(next); };
+    receivedLiveUpdate.current = false;
+    const listener: Listener = (next) => { if (active) { receivedLiveUpdate.current = true; setVerified(next); } };
     const group = listeners.get(profileId) ?? new Set<Listener>();
     group.add(listener);
     listeners.set(profileId, group);
@@ -45,7 +47,7 @@ export default function VerifiedBadge({ profileId }: { profileId: string }) {
       .eq("verification_type", "official")
       .maybeSingle()
       .then(({ data, error }) => {
-        if (active && !error) setVerified(!!data);
+        if (active && !error && !receivedLiveUpdate.current) setVerified(!!data);
       });
 
     return () => {
