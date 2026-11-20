@@ -75,6 +75,7 @@ function writeCachedProfile(profile:Profile){try{const raw=window.localStorage.g
 
 export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
+  const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
   useEffect(()=>{const timer=window.setTimeout(()=>setSplashFinished(true),1000);return()=>window.clearTimeout(timer)},[]);
   useEffect(()=>{if(authChecked&&!user)router.replace("/auth?mode=login")},[authChecked,user,router]);
