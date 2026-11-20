@@ -14,6 +14,7 @@ import "./post-modal.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import FeedSessionTracker from "@/components/FeedSessionTracker";
+import FeedScrollRestoration from "@/components/FeedScrollRestoration";
 
 export const metadata: Metadata = {
   title: "Gista",
@@ -34,6 +35,7 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
         <ThemeProvider>
           <AnalyticsTracker />
           <FeedSessionTracker />
+          <FeedScrollRestoration />
           {children}
           {modal}
         </ThemeProvider>
