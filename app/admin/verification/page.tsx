@@ -144,16 +144,19 @@ export default function AdminVerificationPage() {
       // Push the committed decision directly to the affected profile session.
       // This avoids waiting for database-change replication or a polling cycle.
       const verificationChannel = supabase.channel("gista-verification-" + selected.id);
-      const subscription = await new Promise<void>((resolve) => {
+      const channelReady = await new Promise<boolean>((resolve) => {
         verificationChannel.subscribe((status) => {
-          if (status === "SUBSCRIBED") resolve();
+          if (status === "SUBSCRIBED") resolve(true);
+          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") resolve(false);
         });
       });
-      await verificationChannel.send({
-        type: "broadcast",
-        event: "verification-updated",
-        payload: { is_verified: isVerified },
-      });
+      if (channelReady) {
+        await verificationChannel.send({
+          type: "broadcast",
+          event: "verification-updated",
+          payload: { is_verified: isVerified },
+        });
+      }
       await supabase.removeChannel(verificationChannel);
       const { data: fresh, error: freshError } = await supabase.rpc("admin_get_verification_review", { target_profile_id: selected.id });
       if (!freshError) setReview(fresh as ReviewData);
