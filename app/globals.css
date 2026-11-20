@@ -1279,10 +1279,21 @@ main.content {
 @media(max-height:650px){.auth-page{align-items:flex-start}.auth-card{margin-top:12px}}
 
 
-/* Auth onboarding card: Gista purple surface with white form fields. */
-.auth-card{background:#6d28d9!important;border-radius:24px!important;padding:24px!important;color:#fff!important;}
-.auth-card h1,.auth-card>p,.auth-card label,.auth-card .switch,.auth-card .forgot,.auth-card a{color:#fff!important;}
-.auth-card input:not([type="checkbox"]){background:#fff!important;color:#292333!important;border-color:#e7ddf5!important;}
+/* Correct auth colours: purple page background, fixed white onboarding card. */
+.auth-page{background:#6d28d9!important;}
+.auth-card{
+  width:min(100%,400px)!important;
+  margin:auto!important;
+  background:#fff!important;
+  border:1px solid #eeeaf4!important;
+  border-radius:24px!important;
+  padding:28px!important;
+  box-shadow:0 12px 40px #23104720!important;
+  color:#17151c!important;
+  flex:0 0 auto!important;
+}
+.auth-card h1,.auth-card>p,.auth-card label,.auth-card .switch,.auth-card .forgot,.auth-card a{color:inherit!important;}
+.auth-card input:not([type="checkbox"]){background:#fff!important;color:#292333!important;border-color:#ddd8e6!important;}
 .auth-card input::placeholder{color:#8b8496!important;}
-.auth-card .primary{background:#fff!important;color:#6d28d9!important;border-color:#fff!important;}
-.auth-card button:not(.primary){color:#fff!important;}
+.auth-card .primary{background:#fff!important;color:#6d28d9!important;border:1px solid #e7ddf5!important;}
+.auth-card button:not(.primary){color:#6d28d9!important;}
