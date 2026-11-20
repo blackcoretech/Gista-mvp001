@@ -12,6 +12,7 @@ import "./performance-fixes.css";
 import "./formal-architecture.css";
 import "./dark-mode-visibility-fix.css";
 import "./post-modal.css";
+import "./auth-stationary.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import FeedSessionTracker from "@/components/FeedSessionTracker";
