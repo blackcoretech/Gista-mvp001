@@ -199,8 +199,9 @@ export default function ProfilePage() {
     return () => { void supabase.removeChannel(channel); };
   }, [supabase, profile?.id]);
 
-  // Keep the own-profile post badges consistent with the public profile when
-  // an administrator grants or revokes verification while this page is open.
+  // Receive an explicit cross-client event immediately after an admin decision.
+  // The database read remains the source of truth; the broadcast updates the UI
+  // instantly while that confirmation read completes.
   useEffect(() => {
     if (!profile?.id) return;
     let active = true;
@@ -213,7 +214,11 @@ export default function ProfilePage() {
       if (active && !error) setIsVerified(!!data);
     };
     const channel = supabase
-      .channel("own-profile-verification-" + profile.id)
+      .channel("gista-verification-" + profile.id)
+      .on("broadcast", { event: "verification-updated" }, ({ payload }) => {
+        if (typeof payload?.is_verified === "boolean") setIsVerified(payload.is_verified);
+        void refreshVerification();
+      })
       .on("postgres_changes", {
         event: "*",
         schema: "public",
@@ -226,15 +231,8 @@ export default function ProfilePage() {
     };
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
-    // Realtime delivery can be delayed or unavailable for this table in some
-    // sessions. Recheck the single profile's verification status while visible
-    // so admin revocation/approval is reflected without a manual page refresh.
-    const verificationPoll = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refreshVerification();
-    }, 3000);
     return () => {
       active = false;
-      window.clearInterval(verificationPoll);
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
       void supabase.removeChannel(channel);
