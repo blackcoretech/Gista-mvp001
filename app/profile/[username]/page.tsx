@@ -132,7 +132,11 @@ export default function PublicProfile() {
     };
 
     const channel = supabase
-      .channel("profile-verification-" + profile.id)
+      .channel("gista-verification-" + profile.id)
+      .on("broadcast", { event: "verification-updated" }, ({ payload }) => {
+        if (typeof payload?.is_verified === "boolean") setIsVerified(payload.is_verified);
+        void refreshVerification();
+      })
       .on(
         "postgres_changes",
         {
