@@ -44,13 +44,15 @@ function ensureVerificationChannel() {
 }
 
 export default function VerifiedBadge({ profileId }: { profileId: string }) {
-  const [verified, setVerified] = useState(() => readVerificationCache(profileId) ?? false);
+  const [verified, setVerified] = useState(false);
   const receivedLiveUpdate = useRef(false);
 
   useEffect(() => {
     if (!profileId) return;
     let active = true;
     receivedLiveUpdate.current = false;
+    const cachedStatus = readVerificationCache(profileId);
+    if (cachedStatus !== null) setVerified(cachedStatus);
     const listener: Listener = (next) => { if (active) { receivedLiveUpdate.current = true; writeVerificationCache(profileId, next); setVerified(next); } };
     const group = listeners.get(profileId) ?? new Set<Listener>();
     group.add(listener);
