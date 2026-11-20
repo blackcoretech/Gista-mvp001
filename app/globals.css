@@ -1253,3 +1253,15 @@ main.content {
   margin: 0 !important;
   vertical-align: middle !important;
 }
+
+
+/* App-entry splash screen: reuse the exact Gista feed mark. */
+.gista-splash{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#fff;color:#17151c}
+.gista-splash-brand{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:850;letter-spacing:-1px}
+.gista-splash-brand .gista-mark-feed{width:42px;height:38px;border-radius:12px 12px 12px 7px}
+.gista-splash-brand .gista-mark-feed::after{left:5px;bottom:-4px;width:10px;height:10px}
+.gista-splash-brand .gista-mark-feed span{font-size:27px;letter-spacing:-1px}
+.gista-splash p{margin:0;color:#77727f;font-size:13px;font-weight:550}
+.gista-splash-loader{width:22px;height:3px;margin-top:14px;border-radius:999px;background:#eee7ff;overflow:hidden;position:relative}
+.gista-splash-loader::after{content:"";position:absolute;inset:0;width:45%;border-radius:inherit;background:#6d28d9;animation:gista-splash-progress .8s ease-in-out infinite alternate}
+@keyframes gista-splash-progress{from{transform:translateX(0)}to{transform:translateX(125%)}}
