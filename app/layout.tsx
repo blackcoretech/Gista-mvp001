@@ -41,6 +41,7 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
   return (
     <html lang="en">
       <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try { var savedTheme = localStorage.getItem("gista-theme"); if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") { var resolvedTheme = savedTheme === "dark" ? "dark" : "light"; document.documentElement.dataset.theme = resolvedTheme; document.documentElement.style.colorScheme = resolvedTheme; } } catch (e) {}`,
