@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./splash-theme.css";
 import "./profile-layout-fix.css";
 import "./feed-fixes.css";
 import "./gist-fixes.css";
