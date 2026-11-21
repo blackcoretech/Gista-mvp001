@@ -78,7 +78,7 @@ export default function HomePage(){
   const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
   useEffect(()=>{\n    const splashKey="gista:opening-splash-complete";\n    try{if(window.sessionStorage.getItem(splashKey)==="1"){setSplashFinished(true);return}}catch{}\n    const timer=window.setTimeout(()=>{setSplashFinished(true);try{window.sessionStorage.setItem(splashKey,"1")}catch{}},7000);\n    return()=>window.clearTimeout(timer);\n  },[]);
-  useEffect(()=>{if(authChecked&&!user)router.replace("/auth?mode=login")},[authChecked,user,router]);
+  useEffect(()=>{if(splashFinished&&authChecked&&!user)router.replace("/auth?mode=login")},[splashFinished,authChecked,user,router]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
   const loadProfile=useCallback(async(u:{id:string}|null)=>{if(!u){setProfile(null);return}const cached=readCachedProfile(u.id);if(cached)setProfile(cached);const{data}=await supabase.from("profiles").select("id,display_name,username,avatar_url").eq("id",u.id).maybeSingle();if(data){const next=data as Profile;setProfile(next);writeCachedProfile(next)}},[supabase]);
