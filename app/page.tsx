@@ -77,7 +77,7 @@ export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
   const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
-  useEffect(()=>{const timer=window.setTimeout(()=>setSplashFinished(true),2400);return()=>window.clearTimeout(timer)},[]);
+  useEffect(()=>{const timer=window.setTimeout(()=>setSplashFinished(true),7000);return()=>window.clearTimeout(timer)},[]);
   useEffect(()=>{if(authChecked&&!user)router.replace("/auth?mode=login")},[authChecked,user,router]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
