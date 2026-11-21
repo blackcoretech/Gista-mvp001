@@ -11,22 +11,11 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
-    background_color: "#ffffff",
-    theme_color: "#6d28d9",
+    background_color: "#2A0A5E",
+    theme_color: "#3D0A8A",
     categories: ["social", "communication"],
     icons: [
-      {
-        src: "/gista-logo.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any"
-      },
-      {
-        src: "/gista-logo.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "maskable"
-      }
+      { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" }
     ]
   };
 }
