@@ -77,7 +77,12 @@ export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
   const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
-  useEffect(()=>{\n    const splashKey="gista:opening-splash-complete";\n    try{if(window.sessionStorage.getItem(splashKey)==="1"){setSplashFinished(true);return}}catch{}\n    const timer=window.setTimeout(()=>{setSplashFinished(true);try{window.sessionStorage.setItem(splashKey,"1")}catch{}},7000);\n    return()=>window.clearTimeout(timer);\n  },[]);
+  useEffect(()=>{
+    const splashKey="gista:opening-splash-complete";
+    try{if(window.sessionStorage.getItem(splashKey)==="1"){setSplashFinished(true);return}}catch{}
+    const timer=window.setTimeout(()=>{setSplashFinished(true);try{window.sessionStorage.setItem(splashKey,"1")}catch{}},7000);
+    return()=>window.clearTimeout(timer);
+  },[]);
   useEffect(()=>{if(splashFinished&&authChecked&&!user)router.replace("/auth?mode=login")},[splashFinished,authChecked,user,router]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
@@ -137,7 +142,8 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
   async function toggleSave(p:Post){if(!user){router.push("/auth");return}setBusy(p.id+"s");const next=!p.saved;setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:next,saves:Math.max(0,i.saves+(next?1:-1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});const r=next?await supabase.from("saves").insert({post_id:p.id,user_id:user.id}):await supabase.from("saves").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:!next,saves:Math.max(0,i.saves+(next?-1:1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});setBusy(null)}
   async function sharePost(p:Post){if(!user){router.push("/auth");return}const url=location.origin+"/post/"+p.id;try{if(navigator.share)await navigator.share({title:"Gista",text:p.body??"Check out this Post on Gista",url});else await navigator.clipboard.writeText(url);const r=await supabase.from("shares").insert({post_id:p.id,user_id:user.id});if(!r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,shares:i.shares+1}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts})}catch{}}
   const displayName=profile?.display_name?.trim()||profile?.username||"Gista User";
-  if (!splashFinished) return <main className="gista-splash" aria-label="Gista"><img className="gista-splash-logo" src="/gista-logo.svg" alt="Gista" width="256" height="256" /></main>;\n  if (!authChecked || !user) return null;
+  if (!splashFinished) return <main className="gista-splash" aria-label="Gista"><img className="gista-splash-logo" src="/gista-logo.svg" alt="Gista" width="256" height="256" /></main>;
+  if (!authChecked || !user) return null;
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><img className="brand-logo" src="/gista-logo.svg" alt="" width="34" height="34" /><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
