@@ -77,7 +77,7 @@ export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
   const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
-  useEffect(()=>{const timer=window.setTimeout(()=>setSplashFinished(true),1000);return()=>window.clearTimeout(timer)},[]);
+  useEffect(()=>{const timer=window.setTimeout(()=>setSplashFinished(true),2000);return()=>window.clearTimeout(timer)},[]);
   useEffect(()=>{if(authChecked&&!user)router.replace("/auth?mode=login")},[authChecked,user,router]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
@@ -140,7 +140,7 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
   if (!authChecked || !splashFinished || !user) return <main className="gista-splash" aria-label="Gista"><img className="gista-splash-logo" src="/gista-logo.svg" alt="Gista" width="256" height="256" /></main>;
 
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><span className="gista-mark gista-mark-feed" aria-hidden="true"><span>G</span></span><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
+    <header className="topbar"><div className="brand"><img className="gista-feed-logo" src="/gista-logo.svg" alt="" width="34" height="34" /><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
     <section className="content">
       <div className="feed-tabs">{["Discover","Following"].map(x=><button key={x} className={tab===x?"tab active":"tab"} onClick={()=>{if(x!==tab){setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(x)}}}>{x}</button>)}</div>
       <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><Link className="composer-input" href="/create">What&apos;s on your mind?</Link><Link className="create-btn" aria-label="Create Post" href="/create"><Plus size={19}/></Link></div>
