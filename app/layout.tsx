@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   applicationName: "Gista",
   title: "Gista",
   description: "Where people talk, share, connect, and belong. Every Post Starts a Conversation.",
+  icons: {
+    icon: [{ url: "/icon", sizes: "512x512", type: "image/png" }],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     title: "Gista",
