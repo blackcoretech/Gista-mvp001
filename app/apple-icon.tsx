@@ -4,5 +4,5 @@ export const size = { width: 512, height: 512 };
 export const contentType = "image/svg+xml";
 
 export default function AppleIcon() {
-  return new Response(svg, { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=31536000, immutable" } });
+  return new Response(svg, { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" } });
 }
