@@ -9,7 +9,6 @@ import VoicePlayer from "@/components/voice-player";
 import BottomNav from "@/components/BottomNav";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import JoinedParticipants from "@/components/JoinedParticipants";
-import LandingPage from "@/components/LandingPage";
 import { LONG_AWAY_REFRESH_PENDING_KEY, LONG_AWAY_REFRESH_EVENT, LAST_HIDDEN_AT_KEY, LONG_AWAY_REFRESH_THRESHOLD_MS } from "@/lib/feed-session";
 import { isExplicitBrowserReload } from "@/lib/feed-navigation";
 import { FEED_CACHE_MAX_AGE_MS, browserStorage, clearFeedCache, feedCacheKey, readFeedCache, writeFeedCache } from "@/lib/feed-cache";
@@ -76,7 +75,15 @@ function writeCachedProfile(profile:Profile){try{const raw=window.localStorage.g
 
 export default function HomePage(){
   const supabase=useMemo(()=>createClient(),[]),router=useRouter();
+  const[splashFinished,setSplashFinished]=useState(false);
   const[tab,setTab]=useState("Discover"),[user,setUser]=useState<{id:string;email?:string|null}|null>(null),[authChecked,setAuthChecked]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[loading,setLoading]=useState(true),[feedError,setFeedError]=useState(""),[busy,setBusy]=useState<string|null>(null);
+  useEffect(()=>{
+    const splashKey="gista:opening-splash-complete";
+    try{if(window.sessionStorage.getItem(splashKey)==="1"){setSplashFinished(true);return}}catch{}
+    const timer=window.setTimeout(()=>{setSplashFinished(true);try{window.sessionStorage.setItem(splashKey,"1")}catch{}},7000);
+    return()=>window.clearTimeout(timer);
+  },[]);
+  useEffect(()=>{if(splashFinished&&authChecked&&!user)router.replace("/auth?mode=login")},[splashFinished,authChecked,user,router]);
   const initialLoadDone=useRef(false); const loadedFeedKey=useRef(""); const feedRequestId=useRef(0); const postsRef=useRef<Post[]>([]);
   const feedCacheMaxAge=FEED_CACHE_MAX_AGE_MS;
   const loadProfile=useCallback(async(u:{id:string}|null)=>{if(!u){setProfile(null);return}const cached=readCachedProfile(u.id);if(cached)setProfile(cached);const{data}=await supabase.from("profiles").select("id,display_name,username,avatar_url").eq("id",u.id).maybeSingle();if(data){const next=data as Profile;setProfile(next);writeCachedProfile(next)}},[supabase]);
@@ -135,18 +142,11 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
   async function toggleSave(p:Post){if(!user){router.push("/auth");return}setBusy(p.id+"s");const next=!p.saved;setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:next,saves:Math.max(0,i.saves+(next?1:-1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});const r=next?await supabase.from("saves").insert({post_id:p.id,user_id:user.id}):await supabase.from("saves").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:!next,saves:Math.max(0,i.saves+(next?-1:1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});setBusy(null)}
   async function sharePost(p:Post){if(!user){router.push("/auth");return}const url=location.origin+"/post/"+p.id;try{if(navigator.share)await navigator.share({title:"Gista",text:p.body??"Check out this Post on Gista",url});else await navigator.clipboard.writeText(url);const r=await supabase.from("shares").insert({post_id:p.id,user_id:user.id});if(!r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,shares:i.shares+1}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts})}catch{}}
   const displayName=profile?.display_name?.trim()||profile?.username||"Gista User";
-  if (!authChecked) return <main className="app-shell" aria-busy="true">
-    <header className="topbar"><div className="brand"><span className="gista-mark gista-mark-feed" aria-hidden="true"><span>G</span></span><span>Gista</span></div></header>
-    <section className="content">
-      <div className="feed-tabs" aria-hidden="true"><span className="tab active">Discover</span><span className="tab">Following</span></div>
-      <div className="composer" aria-hidden="true"><div className="avatar">G</div><div className="composer-input">What&apos;s on your mind?</div><div className="create-btn"><Plus size={19}/></div></div>
-      <div className="feed"><div className="feed-skeleton"><div className="skeleton-post"/><div className="skeleton-post"/></div></div>
-    </section>
-  </main>;
-  if (!user) return <LandingPage />;
+  if (!splashFinished) return <main className="gista-splash" aria-label="Gista"><img className="gista-splash-logo" src="/gista-logo.svg" alt="Gista" width="256" height="256" /></main>;
+  if (!authChecked || !user) return null;
 
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><span className="gista-mark gista-mark-feed" aria-hidden="true"><span>G</span></span><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
+    <header className="topbar"><div className="brand"><img className="brand-logo" src="/gista-logo.svg" alt="" width="34" height="34" /><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
     <section className="content">
       <div className="feed-tabs">{["Discover","Following"].map(x=><button key={x} className={tab===x?"tab active":"tab"} onClick={()=>{if(x!==tab){setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(x)}}}>{x}</button>)}</div>
       <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><Link className="composer-input" href="/create">What&apos;s on your mind?</Link><Link className="create-btn" aria-label="Create Post" href="/create"><Plus size={19}/></Link></div>

@@ -1,0 +1,29 @@
+/* Gista launch experience: keep the supplied mark visible until startup is ready. */
+.gista-splash {
+  min-height: 100svh;
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  background: #3D0A8A !important;
+  overflow: hidden;
+}
+.gista-splash-logo {
+  display: block;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  border-radius: 24px;
+  animation: gista-launch-arrive 420ms ease-out both, gista-launch-breathe 1.8s ease-in-out 420ms infinite;
+}
+@keyframes gista-launch-arrive {
+  from { opacity: 0; transform: scale(.88); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes gista-launch-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gista-splash-logo { animation: none; }
+}
