@@ -5,7 +5,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const svg = await readFile(join(process.cwd(), "public", "gista-logo.svg"));
+  const svg = await readFile(
+    join(process.cwd(), "public", "gista-logo.svg"),
+    "utf8",
+  );
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml",
