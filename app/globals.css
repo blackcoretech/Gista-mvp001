@@ -1257,12 +1257,10 @@ main.content {
 
 
 
-/* Native app launch: show only the feed-matching Gista icon briefly. */
+/* Native app launch uses the exact supplied Gista logo asset. */
 .gista-splash{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:#fff}
-.gista-splash-icon{width:112px;height:100px;display:grid;place-items:center;position:relative;border-radius:32px 32px 32px 19px;background:linear-gradient(145deg,#8b3dff 0%,#6d28d9 55%,#4f46e5 100%);color:#fff;font-size:78px;font-weight:900;letter-spacing:-7px;line-height:1}
-.gista-splash-icon::after{content:"";position:absolute;left:2px;bottom:-11px;width:26px;height:26px;background:#6d28d9;clip-path:polygon(0 0,100% 0,0 100%)}
-.gista-splash-icon span{position:relative;z-index:1}
-@media(prefers-reduced-motion:no-preference){.gista-splash-icon{animation:gista-launch-in .22s ease-out both}@keyframes gista-launch-in{from{opacity:.7;transform:scale(.94)}to{opacity:1;transform:scale(1)}}}
+.gista-splash-logo{display:block;width:min(72vw,256px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:22%;animation:gista-launch-in .22s ease-out both}
+@media(prefers-reduced-motion:no-preference){@keyframes gista-launch-in{from{opacity:.7;transform:scale(.94)}to{opacity:1;transform:scale(1)}}}
 
 /* Stable, mobile-first authentication layout without a nested white card. */
 .auth-page{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding: max(28px,env(safe-area-inset-top)) 22px max(28px,env(safe-area-inset-bottom));background:#f7f7fb}
