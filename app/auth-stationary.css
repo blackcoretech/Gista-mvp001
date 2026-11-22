@@ -102,3 +102,9 @@
     gap: 8px !important;
   }
 }
+
+
+/* Preserve room for the @ prefix in the signup username field. */
+.auth-card input.username-field {
+  padding-left: 44px !important;
+}
