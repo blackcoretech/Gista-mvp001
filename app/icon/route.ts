@@ -5,14 +5,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const svg = await readFile(
-    join(process.cwd(), "public", "gista-logo.svg"),
-    "utf8",
+  const png = await readFile(
+    join(process.cwd(), "public", "apple-touch-icon.png"),
   );
-  return new Response(svg, {
+  return new Response(new Uint8Array(png), {
     headers: {
-      "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=0, must-revalidate",
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
 }
