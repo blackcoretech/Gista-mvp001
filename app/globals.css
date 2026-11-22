@@ -1299,3 +1299,14 @@ main.content {
 
 /* Use the same official lips-and-G logo in the Home feed brand. */
 .gista-feed-logo{display:block;width:34px;height:34px;flex:0 0 34px;object-fit:contain;border-radius:8px}
+
+
+/* Home feed tabs scroll away with the Posts instead of sticking below the app bar. */
+.feed-tabs {
+  position: relative !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+.content {
+  touch-action: pan-y;
+}
