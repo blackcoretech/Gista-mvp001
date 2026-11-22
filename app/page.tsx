@@ -141,14 +141,34 @@ try{window.sessionStorage.removeItem(LONG_AWAY_REFRESH_PENDING_KEY)}catch{}let u
   async function toggleLike(p:Post){if(!user){router.push("/auth");return}if(busy===p.id+"l")return;setBusy(p.id+"l");const next=!p.liked;setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,liked:next,likes:Math.max(0,i.likes+(next?1:-1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});const r=next?await supabase.from("likes").insert({post_id:p.id,user_id:user.id}):await supabase.from("likes").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,liked:p.liked,likes:p.likes}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});setBusy(null)}
   async function toggleSave(p:Post){if(!user){router.push("/auth");return}setBusy(p.id+"s");const next=!p.saved;setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:next,saves:Math.max(0,i.saves+(next?1:-1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});const r=next?await supabase.from("saves").insert({post_id:p.id,user_id:user.id}):await supabase.from("saves").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,saved:!next,saves:Math.max(0,i.saves+(next?-1:1))}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts});setBusy(null)}
   async function sharePost(p:Post){if(!user){router.push("/auth");return}const url=location.origin+"/post/"+p.id;try{if(navigator.share)await navigator.share({title:"Gista",text:p.body??"Check out this Post on Gista",url});else await navigator.clipboard.writeText(url);const r=await supabase.from("shares").insert({post_id:p.id,user_id:user.id});if(!r.error)setPosts(x=>{const nextPosts=x.map(i=>i.id===p.id?{...i,shares:i.shares+1}:i);cacheCurrentPosts(nextPosts,user.id);return nextPosts})}catch{}}
+  const feedTouchStart=useRef<{x:number;y:number}|null>(null);
+  function onFeedTouchStart(event:React.TouchEvent<HTMLElement>){
+    const touch=event.touches[0];
+    if(!touch)return;
+    feedTouchStart.current={x:touch.clientX,y:touch.clientY};
+  }
+  function onFeedTouchEnd(event:React.TouchEvent<HTMLElement>){
+    const start=feedTouchStart.current;
+    feedTouchStart.current=null;
+    const touch=event.changedTouches[0];
+    if(!start||!touch)return;
+    const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+    if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25)return;
+    if(dx<0&&tab==="Discover")switchFeedTab("Following");
+    else if(dx>0&&tab==="Following")switchFeedTab("Discover");
+  }
+  function switchFeedTab(nextTab:string){
+    if(nextTab===tab)return;
+    setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(nextTab);
+  }
   const displayName=profile?.display_name?.trim()||profile?.username||"Gista User";
   if (!splashFinished) return <main className="gista-splash" aria-label="Gista"><img className="gista-splash-logo" src="/gista-logo.svg" alt="Gista" width="256" height="256" /></main>;
   if (!authChecked || !user) return null;
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><img className="brand-logo" src="/gista-logo.svg" alt="" width="34" height="34" /><span>Gista</span></div><Link className="icon-btn" aria-label="Settings" href="/settings"><Settings size={20}/></Link></header>
-    <section className="content">
-      <div className="feed-tabs">{["Discover","Following"].map(x=><button key={x} className={tab===x?"tab active":"tab"} onClick={()=>{if(x!==tab){setPosts([]);postsRef.current=[];setLoading(true);setFeedError("");loadedFeedKey.current="";setTab(x)}}}>{x}</button>)}</div>
+    <section className="content" onTouchStart={onFeedTouchStart} onTouchEnd={onFeedTouchEnd}>
+      <div className="feed-tabs" role="tablist" aria-label="Choose feed">{["Discover","Following"].map(x=><button key={x} type="button" role="tab" aria-selected={tab===x} className={tab===x?"tab active":"tab"} onClick={()=>switchFeedTab(x)}>{x}</button>)}</div>
       <div className="composer"><Link href="/profile" className="avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:displayName[0]?.toUpperCase()||"G"}</Link><Link className="composer-input" href="/create">What&apos;s on your mind?</Link><Link className="create-btn" aria-label="Create Post" href="/create"><Plus size={19}/></Link></div>
       <div className="feed">
         {loading&&posts.length===0?<div className="feed-skeleton"><div className="skeleton-post"/><div className="skeleton-post"/></div>:feedError&&posts.length===0?<div className="empty-state"><h3>We couldn&apos;t load the Posts</h3><p>{feedError}</p><button className="primary small" onClick={()=>void loadPosts(user)}>Try again</button></div>:posts.length===0?<div className="empty-state"><h3>No Posts yet</h3><p>{tab==="Following"?"Follow people to see their Posts here.":"Be the first person to create a Post."}</p></div>:posts.map((p,i)=><article className="profile-gist" key={p.id}>
