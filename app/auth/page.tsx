@@ -9,7 +9,6 @@ import { safeInternalPath } from "@/lib/safe-redirect";
 
 const TERMS_VERSION = "0.1-draft";
 const PRIVACY_VERSION = "0.1-draft";
-
 export default function AuthPage(){
   const router=useRouter();
   const [mode,setMode]=useState<"login"|"signup">("login");
@@ -34,45 +33,23 @@ export default function AuthPage(){
   function goBack(){const destination=safeInternalPath(returnTo);router.replace(destination);router.refresh();}
   async function submit(e:React.FormEvent){
     e.preventDefault();
-    if(mode==="signup"&&!/^[a-z0-9_]{3,30}$/.test(username.trim().replace(/^@+/,"").toLowerCase())){
-      setMessage("Username must be 3–30 characters using letters, numbers, or underscores.");return;
-    }
+    if(mode==="signup"&&!/^[a-z0-9_]{3,30}$/.test(username.trim().replace(/^@+/,"").toLowerCase())){setMessage("Username must be 3–30 characters using letters, numbers, or underscores.");return;}
     if(mode==="signup"&&!acceptedLegal){setMessage("Please agree to the Terms of Service and acknowledge the Privacy Policy before creating your account.");return;}
     setLoading(true);setMessage("");
     const supabase=createClient();
     if(mode==="login"){
       const result=await supabase.auth.signInWithPassword({email,password});
-      if(result.error)setMessage(result.error.message);
-      else{setMessage("Signed in.");goBack();}
+      if(result.error)setMessage(result.error.message);else{setMessage("Signed in.");goBack();}
     }else{
       const cleanUsername=username.trim().replace(/^@+/,"").toLowerCase();
-      // Friendly pre-check; the database trigger and case-insensitive unique
-      // index remain the final authority and protect against simultaneous signups.
       const {data:existing,error:lookupError}=await supabase.from("profiles").select("id").ilike("username",cleanUsername).limit(1);
       if(lookupError){setMessage("We couldn’t check that username right now. Please try again.");setLoading(false);return;}
       if(existing?.length){setMessage("That username is already taken. Try another one.");setLoading(false);return;}
       const emailRedirectTo=`${window.location.origin}/auth/confirm?next=${encodeURIComponent(safeInternalPath(returnTo))}`;
       const acceptedAt=new Date().toISOString();
-      const result=await supabase.auth.signUp({
-        email,password,
-        options:{
-          emailRedirectTo,
-          data:{
-            username:cleanUsername,
-            display_name:cleanUsername,
-            gista_terms_accepted_at:acceptedAt,
-            gista_terms_version:TERMS_VERSION,
-            gista_privacy_acknowledged_at:acceptedAt,
-            gista_privacy_version:PRIVACY_VERSION
-          }
-        }
-      });
-      if(result.error){
-        setMessage(/USERNAME_TAKEN|duplicate key|already exists/i.test(result.error.message)
-          ?"That username is already taken. Try another one."
-          :result.error.message);
-      }else if(result.data.session){setMessage("Account created.");goBack();}
-      else setMessage("Check your email to verify your account. You’ll return to the Post after verification.");
+      const result=await supabase.auth.signUp({email,password,options:{emailRedirectTo,data:{username:cleanUsername,display_name:cleanUsername,gista_terms_accepted_at:acceptedAt,gista_terms_version:TERMS_VERSION,gista_privacy_acknowledged_at:acceptedAt,gista_privacy_version:PRIVACY_VERSION}}});
+      if(result.error)setMessage(/USERNAME_TAKEN|duplicate key|already exists/i.test(result.error.message)?"That username is already taken. Try another one.":result.error.message);
+      else if(result.data.session){setMessage("Account created.");goBack();}else setMessage("Check your email to verify your account. You’ll return to the Post after verification.");
     }
     setLoading(false);
   }
@@ -84,13 +61,10 @@ export default function AuthPage(){
     <p>Come talk. Express yourself. Join the conversation.</p>
     {mode==="signup"&&<div className="signup-steps" aria-label="Getting started"><span><b>1</b> Create account</span><i>→</i><span><b>2</b> Set up profile</span><i>→</i><span><b>3</b> Start talking</span></div>}
     <form onSubmit={submit}>
-      {mode==="signup"&&<label>Username<div style={{position:"relative"}}><span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"#77727f"}}>@</span><input type="text" required minLength={3} maxLength={30} autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={e=>setUsername(e.target.value.toLowerCase().replace(/^@+/,""))} placeholder="yourusername" style={{paddingLeft:32}}/></div><small style={{display:"block",marginTop:5,color:"#77727f"}}>Your unique Gista username. Use 3–30 letters, numbers or underscores.</small></label>}
+      {mode==="signup"&&<label>Username<div style={{position:"relative"}}><span aria-hidden="true" style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:"#77727f",pointerEvents:"none"}}>@</span><input type="text" required minLength={3} maxLength={30} autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={e=>setUsername(e.target.value.toLowerCase().replace(/^@+/,""))} placeholder="username" className="username-field" style={{paddingLeft:44}}/></div><small style={{display:"block",marginTop:5,color:"#77727f"}}>Your unique Gista username. Use 3–30 letters, numbers or underscores.</small></label>}
       <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
       <label>Password<div style={{position:"relative"}}><input type={showPassword?"text":"password"} required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} style={{paddingRight:48}}/><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?"Hide password":"Show password"} title={showPassword?"Hide password":"Show password"} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",width:36,height:36,display:"grid",placeItems:"center",border:0,background:"transparent",color:"#77727f",cursor:"pointer"}}>{showPassword?<EyeOff size={19}/>:<Eye size={19}/>}</button></div></label>
-      {mode==="signup"&&<label style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:13,lineHeight:1.55,fontWeight:500,margin:"4px 0 14px"}}>
-        <input type="checkbox" required checked={acceptedLegal} onChange={e=>setAcceptedLegal(e.target.checked)} style={{width:18,height:18,marginTop:2,flex:"0 0 auto",accentColor:"#6d28d9"}}/>
-        <span>I agree to Gista&apos;s <Link href="/terms" target="_blank" style={{color:"#6d28d9",fontWeight:750,textDecoration:"underline"}}>Terms of Service</Link> and acknowledge that I have read the <Link href="/privacy" target="_blank" style={{color:"#6d28d9",fontWeight:750,textDecoration:"underline"}}>Privacy Policy</Link>.</span>
-      </label>}
+      {mode==="signup"&&<label style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:13,lineHeight:1.55,fontWeight:500,margin:"4px 0 14px"}}><input type="checkbox" required checked={acceptedLegal} onChange={e=>setAcceptedLegal(e.target.checked)} style={{width:18,height:18,marginTop:2,flex:"0 0 auto",accentColor:"#6d28d9"}}/><span>I agree to Gista&apos;s <Link href="/terms" target="_blank" style={{color:"#6d28d9",fontWeight:750,textDecoration:"underline"}}>Terms of Service</Link> and acknowledge that I have read the <Link href="/privacy" target="_blank" style={{color:"#6d28d9",fontWeight:750,textDecoration:"underline"}}>Privacy Policy</Link>.</span></label>}
       <button className="primary" disabled={loading}>{loading?"Please wait…":mode==="login"?"Log in":"Sign up"}</button>
     </form>
     {message&&<div className="auth-message" role="status">{message}</div>}
