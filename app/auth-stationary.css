@@ -110,48 +110,79 @@
 }
 
 
-/* iPhone/PWA keyboard support: let the auth screen resize and scroll when the keyboard opens. */
+/* iOS Home Screen login: keep fields in the normal document flow.
+   Avoid fixed/absolute scroll containers and transformed ancestors, which can
+   interfere with focus/keyboard presentation in standalone Safari on iPhone. */
 @media (max-width: 600px) {
+  html,
+  body {
+    min-height: 100%;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
   .auth-page {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
+    position: relative !important;
+    inset: auto !important;
     width: 100% !important;
     height: auto !important;
     min-height: 100vh !important;
+    min-height: 100svh !important;
     min-height: 100dvh !important;
     display: flex !important;
-    align-items: flex-start !important;
+    align-items: center !important;
     justify-content: center !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain !important;
-    padding: max(20px, env(safe-area-inset-top)) 0 max(20px, env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+    -webkit-overflow-scrolling: auto !important;
+    overscroll-behavior: auto !important;
+    padding: max(24px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)) !important;
   }
 
   .auth-card {
     position: relative !important;
+    inset: auto !important;
     top: auto !important;
     left: auto !important;
     transform: none !important;
-    width: min(360px, calc(100vw - 36px)) !important;
+    width: min(360px, 100%) !important;
     max-height: none !important;
     overflow: visible !important;
-    flex: 0 0 auto !important;
     margin: auto !important;
-    touch-action: pan-y !important;
+    flex: 0 0 auto !important;
+    touch-action: auto !important;
   }
 
-  .auth-card input:not([type="checkbox"]),
-  .auth-card button {
-    pointer-events: auto !important;
+  .auth-card form,
+  .auth-card label,
+  .auth-card label > div {
+    transform: none !important;
+    filter: none !important;
   }
 
   .auth-card input:not([type="checkbox"]) {
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
     -webkit-user-select: text !important;
     user-select: text !important;
-    -webkit-appearance: none;
-    appearance: none;
+    pointer-events: auto !important;
+    touch-action: auto !important;
+  }
+
+  .auth-card input:not([type="checkbox"]):focus {
+    outline: none !important;
+    border-color: #7c3aed !important;
+  }
+
+  .auth-card button {
+    pointer-events: auto !important;
     touch-action: manipulation !important;
   }
 }
