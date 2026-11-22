@@ -108,3 +108,50 @@
 .auth-card input.username-field {
   padding-left: 44px !important;
 }
+
+
+/* iPhone/PWA keyboard support: let the auth screen resize and scroll when the keyboard opens. */
+@media (max-width: 600px) {
+  .auth-page {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    padding: max(20px, env(safe-area-inset-top)) 0 max(20px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .auth-card {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: min(360px, calc(100vw - 36px)) !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+    margin: auto !important;
+    touch-action: pan-y !important;
+  }
+
+  .auth-card input:not([type="checkbox"]),
+  .auth-card button {
+    pointer-events: auto !important;
+  }
+
+  .auth-card input:not([type="checkbox"]) {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation !important;
+  }
+}
