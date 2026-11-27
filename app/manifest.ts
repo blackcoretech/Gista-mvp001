@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#3D0A8A",
     categories: ["social", "communication"],
     icons: [
-      { src: "/gista-icon.png", sizes: "180x180", type: "image/png", purpose: "any" }
+      { src: "/gista-logo.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }
     ]
   };
 }
