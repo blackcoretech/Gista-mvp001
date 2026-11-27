@@ -72,7 +72,9 @@ export default function AdminPage() {
     const profileIds = Array.from(new Set([
       ...reportList.flatMap((r) => [r.reporter_id, r.target_user_id ?? ""]),
       ...ticketList.map((t) => t.user_id),
-      ...adminRows.map((a) => a.user_id),\n      ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
+      ...adminRows.map((a) => a.user_id),
+      ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
+      ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
     ].filter(Boolean)));
     const postIds = reportList.map((r) => r.post_id).filter((id): id is string => Boolean(id));
     const responseIds = reportList.map((r) => r.response_id).filter((id): id is string => Boolean(id));
