@@ -69,6 +69,11 @@ FOR EACH ROW EXECUTE FUNCTION private.prepare_anonymous_post();
 
 -- Existing author/admin update policy remains unchanged. Add admin delete without
 -- weakening the existing owner-only delete policy.
+DROP POLICY IF EXISTS "anonymous posts are hidden from direct reads" ON public.posts;
+CREATE POLICY "anonymous posts are hidden from direct reads"
+ON public.posts AS RESTRICTIVE FOR SELECT TO authenticated
+USING (NOT is_anonymous OR author_id = (SELECT auth.uid()) OR (SELECT private.is_gista_admin()));
+
 DROP POLICY IF EXISTS "admins can delete any post" ON public.posts;
 CREATE POLICY "admins can delete any post"
 ON public.posts FOR DELETE TO authenticated
@@ -131,12 +136,19 @@ RETURNS TABLE(
   anonymous_alias text, anonymous_avatar_color text
 )
 LANGUAGE sql
+SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 WITH me AS (SELECT (SELECT auth.uid()) AS user_id),
 candidate_posts AS (
  SELECT p.* FROM public.posts p CROSS JOIN me
  WHERE me.user_id IS NOT NULL
+ AND (
+   p.is_anonymous
+   OR p.author_id = me.user_id
+   OR EXISTS (SELECT 1 FROM public.profiles prx WHERE prx.id=p.author_id AND prx.is_private=false)
+   OR EXISTS (SELECT 1 FROM public.follows fx WHERE fx.follower_id=me.user_id AND fx.following_id=p.author_id)
+ )
  AND p.moderation_status = 'visible'
  AND NOT EXISTS (SELECT 1 FROM public.blocks b WHERE b.blocker_id=me.user_id AND b.blocked_id=p.author_id)
  AND NOT EXISTS (SELECT 1 FROM public.not_interested ni WHERE ni.user_id=me.user_id AND ni.post_id=p.id)
