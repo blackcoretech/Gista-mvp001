@@ -18,7 +18,7 @@ type Ticket = {
   created_at: string; updated_at: string; reviewed_by: string | null;
 };
 type AdminRecord = { user_id: string; role: Role; created_at: string; added_by: string | null };
-type Content = { id: string; body: string | null; content_type?: string; author_id: string };
+type Content = { id: string; body: string | null; content_type?: string; author_id: string };\ntype AnonymousAdminPost = { id:string; author_id:string; body:string|null; content_type:string; media_url:string|null; anonymous_alias:string|null; created_at:string; moderation_status:string };
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #eeeaf4", borderRadius: 16, padding: 16 };
 const button: React.CSSProperties = { border: 0, borderRadius: 10, padding: "10px 13px", background: "#7c3aed", color: "#fff", fontWeight: 750, cursor: "pointer" };
@@ -30,8 +30,8 @@ export default function AdminPage() {
   const [role, setRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"reports" | "complaints" | "access">("reports");
-  const [reports, setReports] = useState<Report[]>([]);
+  const [tab, setTab] = useState<"reports" | "complaints" | "anonymous" | "access">("reports");
+  const [reports, setReports] = useState<Report[]>([]);\n  const [anonymousPosts, setAnonymousPosts] = useState<AnonymousAdminPost[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -46,12 +46,12 @@ export default function AdminPage() {
 
   const loadDashboard = useCallback(async (uid: string, currentRole: Role) => {
     setError("");
-    const [{ data: reportRows, error: reportError }, { data: ticketRows, error: ticketError }] = await Promise.all([
+    const [{ data: reportRows, error: reportError }, { data: ticketRows, error: ticketError }, { data: anonymousRows, error: anonymousError }] = await Promise.all([
       supabase.from("reports").select("id,reporter_id,post_id,response_id,reply_id,target_user_id,reason,details,status,created_at,reviewed_by,reviewed_at,moderation_notes").order("created_at", { ascending: false }).limit(100),
       supabase.from("support_tickets").select("id,user_id,subject,message,status,admin_notes,created_at,updated_at,reviewed_by").order("created_at", { ascending: false }).limit(100),
     ]);
     if (reportError) setError("Could not load reports: " + reportError.message);
-    if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);
+    if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);\n    if (anonymousError) setError((prev) => (prev ? prev + " • " : "") + "Could not load anonymous posts: " + anonymousError.message);\n    setAnonymousPosts((anonymousRows ?? []) as AnonymousAdminPost[]);
     const reportList = (reportRows ?? []) as Report[];
     const ticketList = (ticketRows ?? []) as Ticket[];
     setReports(reportList);
@@ -234,7 +234,7 @@ export default function AdminPage() {
       </section>
       <nav className="admin-tabs">
         <button className={tab==="reports"?"active":""} onClick={()=>setTab("reports")}>Reports <b>{pendingReports}</b></button>
-        <button className={tab==="complaints"?"active":""} onClick={()=>setTab("complaints")}>Complaints <b>{openTickets}</b></button>
+        <button className={tab==="complaints"?"active":""} onClick={()=>setTab("complaints")}>Complaints <b>{openTickets}</b></button>\n        <button className={tab==="anonymous"?"active":""} onClick={()=>setTab("anonymous")}>Anonymous posts <b>{anonymousPosts.length}</b></button>
         {role==="owner"&&<button className={tab==="access"?"active":""} onClick={()=>setTab("access")}>Admin access</button>}
       </nav>
       {message&&<div className="admin-message">{message}</div>}{error&&<div className="admin-error">{error}</div>}
@@ -252,6 +252,17 @@ export default function AdminPage() {
         </article>)}
       </section>}
 
+      {tab==="anonymous"&&<section className="admin-list">
+        <div className="admin-section-heading"><div><h2>Anonymous posts</h2><p>Private moderation view. Author identity is shown only to authorised administrators.</p></div><span>{anonymousPosts.length} total</span></div>
+        {anonymousPosts.length===0?<div className="admin-empty"><strong>No anonymous posts yet</strong><p>Anonymous posts will appear here.</p></div>:anonymousPosts.map(post=><article className="admin-item" key={post.id}>
+          <div className="admin-item-top"><span className={"admin-status "+(post.moderation_status==="removed"?"status-action_taken":"status-reviewed")}>{post.moderation_status==="removed"?"Hidden":"Visible"}</span><time>{new Date(post.created_at).toLocaleString()}</time></div>
+          <h3>{post.anonymous_alias||"Anonymous"} · {post.content_type}</h3>
+          {post.body&&<p className="admin-content-preview">{post.body}</p>}
+          {post.media_url&&post.content_type==="photo"&&<img src={post.media_url} alt="Anonymous post attachment" style={{maxWidth:"100%",borderRadius:12}}/>}
+          <div className="admin-meta"><span>Author account <strong>{personName(post.author_id)}</strong></span><span>Account ID <code>{post.author_id.slice(0,8)}</code></span></div>
+          <div className="admin-actions"><button style={{...button,background:"#b42318"}} disabled={busy===post.id} onClick={async()=>{setBusy(post.id);const {error}=await supabase.from("posts").delete().eq("id",post.id);if(error)setError(error.message);else{setAnonymousPosts(current=>current.filter(item=>item.id!==post.id));setMessage("Anonymous post deleted.");}setBusy("");}}>Delete post</button><Link href={"/post/"+post.id} target="_blank" className="admin-link">View Post ↗</Link></div>
+        </article>)}
+      </section>}
       {tab==="complaints"&&<section className="admin-list">
         <div className="admin-section-heading"><div><h2>User complaints</h2><p>Track support requests from submission to resolution.</p></div><span>{tickets.length} total</span></div>
         {tickets.length===0?<div className="admin-empty"><strong>No complaints yet</strong><p>User support messages will appear here once submitted.</p></div>:tickets.map((t)=><article className="admin-item" key={t.id}>
