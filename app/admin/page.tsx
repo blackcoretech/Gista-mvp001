@@ -18,7 +18,8 @@ type Ticket = {
   created_at: string; updated_at: string; reviewed_by: string | null;
 };
 type AdminRecord = { user_id: string; role: Role; created_at: string; added_by: string | null };
-type Content = { id: string; body: string | null; content_type?: string; author_id: string };\ntype AnonymousAdminPost = { id:string; author_id:string; body:string|null; content_type:string; media_url:string|null; anonymous_alias:string|null; created_at:string; moderation_status:string };
+type Content = { id: string; body: string | null; content_type?: string; author_id: string };
+type AnonymousAdminPost = { id:string; author_id:string; body:string|null; content_type:string; media_url:string|null; anonymous_alias:string|null; created_at:string; moderation_status:string };
 
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #eeeaf4", borderRadius: 16, padding: 16 };
 const button: React.CSSProperties = { border: 0, borderRadius: 10, padding: "10px 13px", background: "#7c3aed", color: "#fff", fontWeight: 750, cursor: "pointer" };
@@ -31,7 +32,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"reports" | "complaints" | "anonymous" | "access">("reports");
-  const [reports, setReports] = useState<Report[]>([]);\n  const [anonymousPosts, setAnonymousPosts] = useState<AnonymousAdminPost[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [anonymousPosts, setAnonymousPosts] = useState<AnonymousAdminPost[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -51,7 +53,9 @@ export default function AdminPage() {
       supabase.from("support_tickets").select("id,user_id,subject,message,status,admin_notes,created_at,updated_at,reviewed_by").order("created_at", { ascending: false }).limit(100),
     ]);
     if (reportError) setError("Could not load reports: " + reportError.message);
-    if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);\n    if (anonymousError) setError((prev) => (prev ? prev + " • " : "") + "Could not load anonymous posts: " + anonymousError.message);\n    setAnonymousPosts((anonymousRows ?? []) as AnonymousAdminPost[]);
+    if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);
+    if (anonymousError) setError((prev) => (prev ? prev + " • " : "") + "Could not load anonymous posts: " + anonymousError.message);
+    setAnonymousPosts((anonymousRows ?? []) as AnonymousAdminPost[]);
     const reportList = (reportRows ?? []) as Report[];
     const ticketList = (ticketRows ?? []) as Ticket[];
     setReports(reportList);
@@ -68,7 +72,7 @@ export default function AdminPage() {
     const profileIds = Array.from(new Set([
       ...reportList.flatMap((r) => [r.reporter_id, r.target_user_id ?? ""]),
       ...ticketList.map((t) => t.user_id),
-      ...adminRows.map((a) => a.user_id),
+      ...adminRows.map((a) => a.user_id),\n      ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
     ].filter(Boolean)));
     const postIds = reportList.map((r) => r.post_id).filter((id): id is string => Boolean(id));
     const responseIds = reportList.map((r) => r.response_id).filter((id): id is string => Boolean(id));
@@ -127,7 +131,8 @@ export default function AdminPage() {
     const { error: removeError } = await supabase.from("posts").update({ moderation_status: "removed" }).eq("id", report.post_id);
     if (removeError) { setError("Could not remove Post: " + removeError.message); setBusy(""); return; }
     const previousNote = (notes[report.id] ?? report.moderation_notes ?? "").trim();
-    const finalNote = [previousNote, "Post removed by an authorised Gista administrator."].filter(Boolean).join("\\n");
+    const finalNote = [previousNote, "Post removed by an authorised Gista administrator."].filter(Boolean).join("\
+");
     const { error: reportError } = await supabase.from("reports").update({
       status: "action_taken", moderation_notes: finalNote, reviewed_by: userId, reviewed_at: new Date().toISOString(),
     }).eq("id", report.id);
@@ -234,7 +239,8 @@ export default function AdminPage() {
       </section>
       <nav className="admin-tabs">
         <button className={tab==="reports"?"active":""} onClick={()=>setTab("reports")}>Reports <b>{pendingReports}</b></button>
-        <button className={tab==="complaints"?"active":""} onClick={()=>setTab("complaints")}>Complaints <b>{openTickets}</b></button>\n        <button className={tab==="anonymous"?"active":""} onClick={()=>setTab("anonymous")}>Anonymous posts <b>{anonymousPosts.length}</b></button>
+        <button className={tab==="complaints"?"active":""} onClick={()=>setTab("complaints")}>Complaints <b>{openTickets}</b></button>
+        <button className={tab==="anonymous"?"active":""} onClick={()=>setTab("anonymous")}>Anonymous posts <b>{anonymousPosts.length}</b></button>
         {role==="owner"&&<button className={tab==="access"?"active":""} onClick={()=>setTab("access")}>Admin access</button>}
       </nav>
       {message&&<div className="admin-message">{message}</div>}{error&&<div className="admin-error">{error}</div>}
