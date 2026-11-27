@@ -5,7 +5,6 @@ ALTER TABLE public.posts
   ADD COLUMN IF NOT EXISTS anonymous_avatar_color text;
 
 CREATE SCHEMA IF NOT EXISTS private;
-REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
 
 CREATE TABLE IF NOT EXISTS private.anonymous_post_rate_limits (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -222,3 +221,5 @@ REVOKE ALL ON FUNCTION public.get_fast_home_feed(text,integer,integer) FROM PUBL
 REVOKE ALL ON FUNCTION public.get_fast_home_feed_refresh(text,integer,integer,bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_fast_home_feed(text,integer,integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_fast_home_feed_refresh(text,integer,integer,bigint) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_fast_home_feed(text,integer,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_fast_home_feed_refresh(text,integer,integer,bigint) TO service_role;
