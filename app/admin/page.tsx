@@ -55,7 +55,7 @@ export default function AdminPage() {
     ]);
     if (reportError) setError("Could not load reports: " + reportError.message);
     if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);
-    if (anonymousError) setError((prev) => (prev ? prev + " • " : "") + "Could not load anonymous posts: " + anonymousError.message);
+    if (anonymousError && anonymousError.code !== "PGRST205" && anonymousError.code !== "42P01") setError((prev) => (prev ? prev + " • " : "") + "Could not load anonymous posts: " + anonymousError.message);
     setAnonymousPosts((anonymousRows ?? []) as AnonymousAdminPost[]);
     const reportList = (reportRows ?? []) as Report[];
     const ticketList = (ticketRows ?? []) as Ticket[];
