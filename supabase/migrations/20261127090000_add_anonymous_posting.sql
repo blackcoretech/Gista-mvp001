@@ -218,5 +218,7 @@ AS $function$
  OFFSET greatest(coalesce(p_offset,0),0);
 $function$;
 
+REVOKE ALL ON FUNCTION public.get_fast_home_feed(text,integer,integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.get_fast_home_feed_refresh(text,integer,integer,bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_fast_home_feed(text,integer,integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_fast_home_feed_refresh(text,integer,integer,bigint) TO authenticated;
