@@ -20,7 +20,9 @@ type Post=FeedRow&{profiles:Profile|null;likes:number;responses:number;shares:nu
 function formatRelativeTime(value:string){const created=new Date(value),diff=Math.max(0,Date.now()-created.getTime());const minutes=Math.floor(diff/60000);if(minutes<1)return "Just now";if(minutes<60)return minutes+"m ago";const hours=Math.floor(diff/3600000);if(hours<24)return hours+"h ago";const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(created.toDateString()===yesterday.toDateString())return "Yesterday";return created.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
 
 async function attachJoinedParticipants(supabase: ReturnType<typeof createClient>, posts: Post[]): Promise<Post[]> {
-  if (!posts.length) return posts;\n  const regularPosts = posts.filter((post) => !post.is_anonymous);\n  const anonymousIds = new Set(posts.filter((post) => post.is_anonymous).map((post) => post.id));
+  if (!posts.length) return posts;
+  const regularPosts = posts.filter((post) => !post.is_anonymous);
+  const anonymousIds = new Set(posts.filter((post) => post.is_anonymous).map((post) => post.id));
   const postIds = posts.map((post) => post.id);
   const creatorByPost = new Map(posts.map((post) => [post.id, post.author_id]));
   const { data: responseRows, error } = await supabase
