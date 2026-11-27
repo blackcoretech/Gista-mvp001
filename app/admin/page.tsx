@@ -51,6 +51,7 @@ export default function AdminPage() {
     const [{ data: reportRows, error: reportError }, { data: ticketRows, error: ticketError }, { data: anonymousRows, error: anonymousError }] = await Promise.all([
       supabase.from("reports").select("id,reporter_id,post_id,response_id,reply_id,target_user_id,reason,details,status,created_at,reviewed_by,reviewed_at,moderation_notes").order("created_at", { ascending: false }).limit(100),
       supabase.from("support_tickets").select("id,user_id,subject,message,status,admin_notes,created_at,updated_at,reviewed_by").order("created_at", { ascending: false }).limit(100),
+      supabase.from("admin_posts").select("id,author_id,body,content_type,media_url,anonymous_alias,created_at,moderation_status,is_anonymous").eq("is_anonymous",true).order("created_at",{ascending:false}).limit(100),
     ]);
     if (reportError) setError("Could not load reports: " + reportError.message);
     if (ticketError) setError((prev) => (prev ? prev + " • " : "") + "Could not load complaints: " + ticketError.message);
@@ -73,7 +74,6 @@ export default function AdminPage() {
       ...reportList.flatMap((r) => [r.reporter_id, r.target_user_id ?? ""]),
       ...ticketList.map((t) => t.user_id),
       ...adminRows.map((a) => a.user_id),
-      ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
       ...((anonymousRows ?? []) as AnonymousAdminPost[]).map((p) => p.author_id),
     ].filter(Boolean)));
     const postIds = reportList.map((r) => r.post_id).filter((id): id is string => Boolean(id));
